@@ -189,7 +189,7 @@ public class MenuService : IMenuService
             var equipButton = new ButtonMenuOption("✅ 装备模型");
             equipButton.Click += async (sender, args) =>
             {
-                var success = await _modelService.ApplyModelToPlayerAsync(args.Player!, modelId);
+                var success = _modelService.ApplyModelToPlayer(args.Player!, modelId);
                 if (success)
                 {
                     _logger.LogInformation($"玩家 {args.Player!.Controller.PlayerName} 装备模型: {model.DisplayName}");

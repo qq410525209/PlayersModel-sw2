@@ -309,7 +309,7 @@ public partial class PlayersModel
         {
             if (_modelService == null) return;
 
-            var success = await _modelService.ApplyModelToPlayerAsync(targetPlayer, modelId);
+            var success = _modelService.ApplyModelToPlayer(targetPlayer, modelId);
             if (success)
             {
                 var model = _modelService.GetModelById(modelId);

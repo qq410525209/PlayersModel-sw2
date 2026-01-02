@@ -40,7 +40,7 @@ public interface IModelService
     /// <summary>
     /// 应用模型给玩家
     /// </summary>
-    Task<bool> ApplyModelToPlayerAsync(IPlayer player, string modelId);
+    bool ApplyModelToPlayer(IPlayer player, string modelId);
 
     /// <summary>
     /// 购买模型
@@ -210,7 +210,7 @@ public class ModelService : IModelService
             // 检查是否拥有此模型 (免费模型跳过)
             if (model.Price > 0)
             {
-                var owns = await _database.PlayerOwnsModelAsync(player.SteamID, modelId);
+                var owns = _database.PlayerOwnsModelAsync(player.SteamID, modelId).GetAwaiter().GetResult();
                 if (!owns)
                 {
                     _logger.LogWarning($"玩家 {player.Controller.PlayerName} 未拥有模型 {modelId}");
@@ -235,7 +235,7 @@ public class ModelService : IModelService
             }
 
             // 保存玩家当前使用的模型
-            await _database.SetPlayerCurrentModelAsync(player.SteamID, model.ModelPath, model.ArmsPath);
+            _database.SetPlayerCurrentModelAsync(player.SteamID, model.ModelPath, model.ArmsPath).GetAwaiter().GetResult();
 
             _logger.LogInformation($"玩家 {player.Controller.PlayerName} 应用模型 {model.DisplayName}");
             return true;

@@ -7,34 +7,24 @@ using SwiftlyS2.Shared.GameEvents;
 
 namespace PlayersModel;
 
-/// <summary>
-/// 事件处理 (PlayersModel partial class)
-/// </summary>
 public partial class PlayersModel
 {
-    /// <summary>
-    /// 初始化事件监听
-    /// </summary>
     private void InitializeEvents()
     {
-        // 预缓存资源事件 - 预缓存所有模型
+        // 预缓存资源事件
         Core.Event.OnPrecacheResource += (@event) =>
         {
             if (_modelService == null) return;
-
             var models = _modelService.GetAllModels();
             var logger = _serviceProvider?.GetService<ILogger<PlayersModel>>();
             
             foreach (var model in models)
             {
-                // 预缓存模型文件
                 if (!string.IsNullOrEmpty(model.ModelPath))
                 {
                     @event.AddItem(model.ModelPath);
                     logger?.LogInformation($"预缓存模型: {model.ModelPath}");
                 }
-                
-                // 预缓存手臂模型
                 if (!string.IsNullOrEmpty(model.ArmsPath))
                 {
                     @event.AddItem(model.ArmsPath);
@@ -43,24 +33,22 @@ public partial class PlayersModel
             }
         };
 
-        // 玩家进入服务器事件 - 自动应用保存的模型
+        // 玩家进入服务器事件
         Core.Event.OnClientPutInServer += (@event) =>
         {
             var playerManager = _serviceProvider?.GetService<IPlayerManagerService>();
             if (playerManager == null) return;
-
             var player = playerManager.GetPlayer(@event.PlayerId);
             if (player == null || !player.IsValid) return;
 
-            Task.Run(async () =>
+            Core.Scheduler.DelayBySeconds(1.0f, () =>
             {
+                if (!player.IsValid || player.Pawn?.IsValid != true || _databaseService == null) return;
+                
                 try
                 {
-                    await Task.Delay(1000);
-                    if (_databaseService == null) return;
-
-                    var modelData = await _databaseService.GetPlayerCurrentModelAsync(player.SteamID);
-                    if (!string.IsNullOrEmpty(modelData.modelPath) && player.Pawn?.IsValid == true)
+                    var modelData = _databaseService.GetPlayerCurrentModelAsync(player.SteamID).GetAwaiter().GetResult();
+                    if (!string.IsNullOrEmpty(modelData.modelPath))
                     {
                         player.Pawn.AcceptInput("SetModel", modelData.modelPath, null, null, 0);
                         var logger = _serviceProvider?.GetService<ILogger<PlayersModel>>();
@@ -75,43 +63,37 @@ public partial class PlayersModel
             });
         };
 
-        // 玩家重生事件 - 应用保存的模型
+        // 玩家重生事件
         Core.GameEvent.HookPost<EventPlayerSpawn>((@event) =>
         {
-            var playerManager = _serviceProvider?.GetService<IPlayerManagerService>();
-            if (playerManager == null) return HookResult.Continue;
-
             var player = @event.UserIdPlayer;
             if (player == null || !player.IsValid) return HookResult.Continue;
 
             Core.Scheduler.DelayBySeconds(0.1f, () =>
             {
-                Task.Run(async () =>
+                if (!player.IsValid || player.Pawn?.IsValid != true || _databaseService == null) return;
+                
+                try
                 {
-                    try
+                    var modelData = _databaseService.GetPlayerCurrentModelAsync(player.SteamID).GetAwaiter().GetResult();
+                    if (!string.IsNullOrEmpty(modelData.modelPath))
                     {
-                        if (_databaseService == null) return;
-
-                        var modelData = await _databaseService.GetPlayerCurrentModelAsync(player.SteamID);
-                        if (!string.IsNullOrEmpty(modelData.modelPath) && player.Pawn?.IsValid == true)
-                        {
-                            player.Pawn.AcceptInput("SetModel", modelData.modelPath, null, null, 0);
-                            var logger = _serviceProvider?.GetService<ILogger<PlayersModel>>();
-                            logger?.LogInformation($"玩家重生应用模型: {player.Controller.PlayerName}");
-                        }
-                    }
-                    catch (Exception ex)
-                    {
+                        player.Pawn.AcceptInput("SetModel", modelData.modelPath, null, null, 0);
                         var logger = _serviceProvider?.GetService<ILogger<PlayersModel>>();
-                        logger?.LogError(ex, $"玩家重生应用模型失败: {player?.Controller.PlayerName}");
+                        logger?.LogInformation($"玩家重生应用模型: {player.Controller.PlayerName}");
                     }
-                });
+                }
+                catch (Exception ex)
+                {
+                    var logger = _serviceProvider?.GetService<ILogger<PlayersModel>>();
+                    logger?.LogError(ex, $"玩家重生应用模型失败: {player?.Controller.PlayerName}");
+                }
             });
             
             return HookResult.Continue;
         });
 
-        // 回合开始事件 - 为所有玩家应用模型
+        // 回合开始事件
         Core.GameEvent.HookPost<EventRoundStart>((@event) =>
         {
             var playerManager = _serviceProvider?.GetService<IPlayerManagerService>();
@@ -123,28 +105,24 @@ public partial class PlayersModel
             Core.Scheduler.DelayBySeconds(0.5f, () =>
             {
                 var allPlayers = Enumerable.Range(0, 64).Select(i => playerManager.GetPlayer(i)).Where(p => p != null && p.IsValid);
-            foreach (var player in allPlayers)
+                
+                foreach (var player in allPlayers)
                 {
-                    if (player == null || !player.IsValid || player.Pawn?.IsValid != true) continue;
-
-                    Task.Run(async () =>
+                    if (player.Pawn?.IsValid != true || _databaseService == null) continue;
+                    
+                    try
                     {
-                        try
+                        var modelData = _databaseService.GetPlayerCurrentModelAsync(player.SteamID).GetAwaiter().GetResult();
+                        if (!string.IsNullOrEmpty(modelData.modelPath))
                         {
-                            if (_databaseService == null) return;
-
-                            var modelData = await _databaseService.GetPlayerCurrentModelAsync(player.SteamID);
-                            if (!string.IsNullOrEmpty(modelData.modelPath) && player.Pawn?.IsValid == true)
-                            {
-                                player.Pawn.AcceptInput("SetModel", modelData.modelPath, null, null, 0);
-                                logger?.LogInformation($"回合开始应用模型: {player.Controller.PlayerName}");
-                            }
+                            player.Pawn.AcceptInput("SetModel", modelData.modelPath, null, null, 0);
+                            logger?.LogInformation($"回合开始应用模型: {player.Controller.PlayerName}");
                         }
-                        catch (Exception ex)
-                        {
-                            logger?.LogError(ex, $"回合开始应用模型失败: {player?.Controller.PlayerName}");
-                        }
-                    });
+                    }
+                    catch (Exception ex)
+                    {
+                        logger?.LogError(ex, $"回合开始应用模型失败: {player?.Controller.PlayerName}");
+                    }
                 }
             });
             
