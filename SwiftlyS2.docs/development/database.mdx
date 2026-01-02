@@ -1,0 +1,32 @@
+---
+title: Database
+---
+
+SwiftlyS2 provide an unified database configuration so you don't need to write your own configuration.
+The main database for SwiftlyS2 is MySQL. Ideally, if you want to use database, you should assume that the connection you are getting is a MySQL connection.
+
+## Get a connection
+
+Use following code to get a connection.
+```csharp
+IDBConnection connection = Core.Database.GetConnection("testplugin");
+```
+The method retrieve a connection with the key in `addons/swiftlys2/configs/database.jsonc`.
+If the key is not found in configuration, it will return the default connection.
+
+You can also use `GetConnectionString` method to get the raw connection string.
+
+<Callout type="warning">
+  The password needs to not contain the following: `@`, `:` and `/`. This is also available for username, host and database name.
+</Callout>
+
+## Use ORM to operate database
+
+Getting a `IDBConnection` is not enough, you need to use ORM to operate database.
+For example, following orm can be used:
+- Dapper
+- Dammel (Dapper extension)
+- FreeSql
+- Entity Framework Core
+
+

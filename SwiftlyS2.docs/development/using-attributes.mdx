@@ -1,0 +1,9 @@
+---
+title: Using attributes
+---
+
+While you are reading following pages, you may have noticed that some methods are decorated with attributes, like `[EventListener]` or `[ServerNetMessageHandler]`.
+
+**Please notice that these attributes are only available in your main class that inherits BasePlugin by default.**
+
+If you want to use the attributes in other classes, you need to call `Core.Registrator.Register(this);` first inside the object whose class have attributes.

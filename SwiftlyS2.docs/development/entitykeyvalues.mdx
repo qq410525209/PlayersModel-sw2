@@ -1,0 +1,122 @@
+---
+title: Entity Key Values
+---
+
+This page introduces the `CEntityKeyValues` class, which provides a key-value store for entity properties with support for various data types.
+
+## Creating Entity Key Values
+
+Here's an example of creating an entity key values instance:
+```csharp
+var keyValues = new CEntityKeyValues();
+```
+
+<Callout type="info">
+  `CEntityKeyValues` implements `IDisposable`, so make sure to dispose of it when you're done or use it within a `using` statement to ensure proper cleanup.
+</Callout>
+
+## Setting Values
+
+The `CEntityKeyValues` class provides type-specific setter methods for various data types.
+
+### Type-Specific Setters
+
+```csharp
+keyValues.SetBool("is_enabled", true);
+keyValues.SetInt32("health", 100);
+keyValues.SetUInt32("flags", 0x01);
+keyValues.SetInt64("large_value", 9223372036854775807);
+keyValues.SetUInt64("ularge_value", 18446744073709551615);
+keyValues.SetFloat("speed", 250.5f);
+keyValues.SetDouble("precise_value", 3.14159265359);
+keyValues.SetString("name", "example");
+keyValues.SetPtr("pointer", nint.Zero);
+keyValues.SetStringToken("token", stringToken);
+keyValues.SetColor("color", new Color(255, 0, 0, 255));
+keyValues.SetVector("position", new Vector(0, 0, 100));
+keyValues.SetVector2D("position_2d", new Vector2D(10, 20));
+keyValues.SetVector4D("position_4d", new Vector4D(1, 2, 3, 4));
+keyValues.SetQAngle("angle", new QAngle(0, 90, 0));
+```
+
+### Generic Setter
+
+You can also use the generic `Set<T>` method to set values:
+```csharp
+keyValues.Set<int>("health", 100);
+keyValues.Set<string>("name", "example");
+keyValues.Set<Vector>("position", new Vector(0, 0, 100));
+```
+
+Supported types for the generic setter:
+- `bool`
+- `int`
+- `uint`
+- `long`
+- `ulong`
+- `float`
+- `double`
+- `string`
+- `nint`
+- `CUtlStringToken`
+- `Color`
+- `Vector`
+- `Vector2D`
+- `Vector4D`
+- `QAngle`
+
+## Getting Values
+
+The `CEntityKeyValues` class provides type-specific getter methods to retrieve values.
+
+### Type-Specific Getters
+
+```csharp
+bool isEnabled = keyValues.GetBool("is_enabled");
+int health = keyValues.GetInt32("health");
+uint flags = keyValues.GetUInt32("flags");
+long largeValue = keyValues.GetInt64("large_value");
+ulong ulargeValue = keyValues.GetUInt64("ularge_value");
+float speed = keyValues.GetFloat("speed");
+double preciseValue = keyValues.GetDouble("precise_value");
+string name = keyValues.GetString("name");
+nint pointer = keyValues.GetPtr("pointer");
+CUtlStringToken token = keyValues.GetStringToken("token");
+Color color = keyValues.GetColor("color");
+Vector position = keyValues.GetVector("position");
+Vector2D position2D = keyValues.GetVector2D("position_2d");
+Vector4D position4D = keyValues.GetVector4D("position_4d");
+QAngle angle = keyValues.GetQAngle("angle");
+```
+
+### Generic Getter
+
+You can also use the generic `Get<T>` method to retrieve values:
+```csharp
+int health = keyValues.Get<int>("health");
+string name = keyValues.Get<string>("name");
+Vector position = keyValues.Get<Vector>("position");
+```
+
+The supported types for the generic getter are the same as the generic setter.
+
+## Example Usage
+
+Here's a complete example using `CEntityKeyValues`:
+
+```csharp
+using (var keyValues = new CEntityKeyValues())
+{
+    // Set various properties
+    keyValues.SetString("entity_name", "my_entity");
+    keyValues.SetInt32("max_health", 100);
+    keyValues.SetVector("spawn_position", new Vector(0, 0, 64));
+    keyValues.SetBool("is_active", true);
+
+    // spawn entity
+}
+```
+
+<Callout type="warning">
+  If you attempt to use an unsupported type with the generic `Set<T>` or `Get<T>` methods, an `InvalidOperationException` will be thrown.
+</Callout>

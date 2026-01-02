@@ -1,0 +1,496 @@
+---
+title: Steamworks
+---
+
+SwiftlyS2 includes a trimmed version of Steamworks.NET that provides access to Steam's Game Server API functionality. This allows you to interact with Steam services for game servers directly from your plugins.
+
+## Getting Started
+
+To use the Steamworks API in your plugin, add the following using directive:
+
+```csharp
+using SwiftlyS2.Shared.SteamAPI;
+```
+
+The Steamworks API is available at [/docs/api/steamapi](/docs/api/steamapi) and provides access to Steam Game Server services.
+
+## Overview
+
+The Steamworks API is a trimmed version of Steamworks.NET, containing the Steam Game Server interfaces and functionality. This integration allows you to:
+
+- Manage game server authentication with Steam
+- Handle player authentication and ownership verification
+- Access Steam matchmaking and server browser features
+- Query player information and relationships
+
+## Common Use Cases
+
+### Working with Steam IDs
+
+Steam IDs are fundamental to working with Steam services. They uniquely identify users, lobbies, and other Steam entities.
+
+```csharp
+// Get a player's Steam ID
+var steamId = player.SteamID;
+
+// Create a CSteamID from a 64-bit ID
+CSteamID userId = new CSteamID(76561198012345678);
+
+// Convert to different formats
+ulong steamId64 = userId.m_SteamID;
+uint accountId = userId.GetAccountID();
+
+// Check if a Steam ID is valid
+if (userId.IsValid()) {
+    Console.WriteLine("Valid Steam ID");
+}
+```
+
+### Game Server Authentication
+
+Verify player ownership and authenticate with Steam:
+
+```csharp
+// Check if a player owns the game
+EUserHasLicenseForAppResult licenseResult = SteamGameServer.UserHasLicenseForApp(
+    steamId,
+    new AppId_t(730) // CS2's App ID
+);
+
+if (licenseResult == EUserHasLicenseForAppResult.k_EUserHasLicenseResultHasLicense) {
+    Console.WriteLine("Player owns the game");
+} else if (licenseResult == EUserHasLicenseForAppResult.k_EUserHasLicenseResultDoesNotHaveLicense) {
+    Console.WriteLine("Player does not own the game");
+}
+
+// Request user authentication
+SteamGameServer.SendUserConnectAndAuthenticate(
+    steamId,
+    authTicket,
+    authTicketSize
+);
+
+// End authentication session when player disconnects
+SteamGameServer.SendUserDisconnect(steamId);
+```
+
+### Server Information
+
+Manage your game server's presence on Steam:
+
+```csharp
+// Set server name
+SteamGameServer.SetServerName("My Awesome Server");
+
+// Set map name
+SteamGameServer.SetMapName("de_dust2");
+
+// Set max player count
+SteamGameServer.SetMaxPlayerCount(32);
+
+// Set whether server is password protected
+SteamGameServer.SetPasswordProtected(true);
+
+// Set game description/tags
+SteamGameServer.SetGameTags("casual,competitive");
+
+// Set game data (custom information)
+SteamGameServer.SetGameData("region:NA,mode:deathmatch");
+
+// Get public IP address
+uint publicIP = SteamGameServer.GetPublicIP();
+```
+
+### Server Utils
+
+Access utility functions for game servers:
+
+```csharp
+// Get the current time from Steam servers
+uint serverTime = SteamGameServerUtils.GetServerRealTime();
+
+// Get the app ID of the current game
+AppId_t appId = SteamGameServerUtils.GetAppID();
+
+// Get Steam server time as DateTime
+DateTime steamTime = DateTimeOffset.FromUnixTimeSeconds(serverTime).DateTime;
+
+// Get the current game's IP country code
+string ipCountry = SteamGameServerUtils.GetIPCountry();
+```
+
+### Steam Workshop (UGC)
+
+Download and manage Steam Workshop items:
+
+```csharp
+// Create a PublishedFileId_t for a workshop item
+var fileId = new PublishedFileId_t(3070212801); // Workshop ID
+
+// Download a workshop item
+bool downloadStarted = SteamUGC.DownloadItem(fileId, highPriority: true);
+
+// Check item state
+EItemState itemState = (EItemState)SteamUGC.GetItemState(fileId);
+
+if ((itemState & EItemState.k_EItemStateInstalled) != 0) {
+    Console.WriteLine("Item is installed");
+}
+
+if ((itemState & EItemState.k_EItemStateDownloading) != 0) {
+    Console.WriteLine("Item is downloading");
+}
+
+// Get download progress
+ulong bytesDownloaded = 0;
+ulong bytesTotal = 0;
+if (SteamUGC.GetItemDownloadInfo(fileId, out bytesDownloaded, out bytesTotal)) {
+    float progress = (float)bytesDownloaded / bytesTotal * 100f;
+    Console.WriteLine($"Download progress: {progress:F1}%");
+}
+
+// Get installation info
+ulong sizeOnDisk = 0;
+string folder = "";
+uint timestamp = 0;
+if (SteamUGC.GetItemInstallInfo(fileId, out sizeOnDisk, out folder, 1024, out timestamp)) {
+    Console.WriteLine($"Installed to: {folder}");
+    Console.WriteLine($"Size: {sizeOnDisk} bytes");
+    Console.WriteLine($"Last updated: {DateTimeOffset.FromUnixTimeSeconds(timestamp).DateTime}");
+}
+
+// Suspend downloads
+SteamUGC.SuspendDownloads(true);
+
+// Resume downloads
+SteamUGC.SuspendDownloads(false);
+```
+
+## Working with Callbacks
+
+Steamworks uses a callback system for asynchronous operations. Here's how to handle them:
+
+```csharp
+public class Plugin : SwiftlyPlugin {
+    private Callback<GSClientApprove_t>? _clientApprove;
+    private Callback<GSClientDeny_t>? _clientDeny;
+    private Callback<GSStatsReceived_t>? _statsReceived;
+
+    public override void OnLoaded() {
+        // Register callbacks
+        _clientApprove = Callback<GSClientApprove_t>.Create(OnClientApprove);
+        _clientDeny = Callback<GSClientDeny_t>.Create(OnClientDeny);
+        _statsReceived = Callback<GSStatsReceived_t>.Create(OnStatsReceived);
+    }
+
+    private void OnClientApprove(GSClientApprove_t callback) {
+        Console.WriteLine($"Client approved: {callback.m_SteamID}");
+        // Player is authenticated and can join
+    }
+
+    private void OnClientDeny(GSClientDeny_t callback) {
+        Console.WriteLine($"Client denied: {callback.m_SteamID}, Reason: {callback.m_eDenyReason}");
+        // Player authentication failed, should be kicked
+    }
+
+    private void OnStatsReceived(GSStatsReceived_t callback) {
+        if (callback.m_eResult == EResult.k_EResultOK) {
+            Console.WriteLine($"Successfully received stats for: {callback.m_SteamIDUser}");
+
+            // Now you can safely access user stats
+            int kills = 0;
+            SteamGameServerStats.GetUserStat(callback.m_SteamIDUser, "total_kills", out kills);
+        } else {
+            Console.WriteLine($"Failed to receive stats: {callback.m_eResult}");
+        }
+    }
+}
+```
+
+## Common Enums and Types
+
+### CSteamID
+
+The primary identifier type for Steam entities:
+
+```csharp
+CSteamID steamId = new CSteamID(76561198012345678);
+
+// Properties and methods
+ulong m_SteamID;              // 64-bit representation
+uint GetAccountID();          // 32-bit account ID
+bool IsValid();               // Check validity
+bool IsIndividualAccount();   // Check if individual user
+```
+
+### EResult
+
+Common result codes from Steam API calls:
+
+```csharp
+EResult.k_EResultOK                    // Success
+EResult.k_EResultFail                  // Generic failure
+EResult.k_EResultNoConnection          // No connection to Steam
+EResult.k_EResultInvalidPassword       // Password/ticket invalid
+EResult.k_EResultLoggedInElsewhere    // Same user logged in elsewhere
+EResult.k_EResultInvalidParam          // Invalid parameter
+EResult.k_EResultFileNotFound          // File not found
+EResult.k_EResultDuplicateRequest     // Duplicate request
+```
+
+### EUserHasLicenseForAppResult
+
+Result codes for license checks:
+
+```csharp
+EUserHasLicenseForAppResult.k_EUserHasLicenseResultHasLicense       // User owns the app
+EUserHasLicenseForAppResult.k_EUserHasLicenseResultDoesNotHaveLicense // User does not own
+EUserHasLicenseForAppResult.k_EUserHasLicenseResultNoAuth           // No authentication
+```
+
+### EDenyReason
+
+Reasons why a client connection might be denied:
+
+```csharp
+EDenyReason.k_EDenyInvalid                // Invalid reason
+EDenyReason.k_EDenyInvalidVersion         // Client version mismatch
+EDenyReason.k_EDenyGeneric                // Generic denial
+EDenyReason.k_EDenyNotLoggedOn            // Not logged into Steam
+EDenyReason.k_EDenyNoLicense              // Doesn't own the game
+EDenyReason.k_EDenyCheater                // VAC banned
+EDenyReason.k_EDenyLoggedInElseWhere      // Already connected elsewhere
+EDenyReason.k_EDenyUnknownText            // Unknown text
+EDenyReason.k_EDenyIncompatibleAnticheat  // Incompatible anticheat
+EDenyReason.k_EDenyMemoryCorruption       // Memory corruption detected
+EDenyReason.k_EDenyIncompatibleSoftware   // Incompatible software
+EDenyReason.k_EDenySteamConnectionLost    // Lost connection to Steam
+EDenyReason.k_EDenySteamConnectionError   // Steam connection error
+EDenyReason.k_EDenySteamResponseTimedOut  // Steam didn't respond
+EDenyReason.k_EDenySteamValidationStalled // Validation stalled
+EDenyReason.k_EDenySteamOwnerLeftGuestUser // Owner left, guest kicked
+```
+
+### EItemState
+
+Workshop item state flags (can be combined):
+
+```csharp
+EItemState.k_EItemStateNone               // No state
+EItemState.k_EItemStateSubscribed         // Item is subscribed
+EItemState.k_EItemStateLegacyItem         // Legacy item
+EItemState.k_EItemStateInstalled          // Item is installed
+EItemState.k_EItemStateNeedsUpdate        // Item needs an update
+EItemState.k_EItemStateDownloading        // Item is currently downloading
+EItemState.k_EItemStateDownloadPending    // Download is pending
+
+// Example: Check multiple states
+EItemState itemState = (EItemState)SteamUGC.GetItemState(fileId);
+
+if ((itemState & EItemState.k_EItemStateInstalled) != 0) {
+    Console.WriteLine("Item is installed");
+}
+
+if ((itemState & EItemState.k_EItemStateNeedsUpdate) != 0) {
+    Console.WriteLine("Item needs update");
+}
+```
+
+### PublishedFileId_t
+
+Represents a unique identifier for a Steam Workshop item:
+
+```csharp
+// Create from workshop ID
+PublishedFileId_t fileId = new PublishedFileId_t(3070212801);
+
+// Access the underlying ID
+ulong workshopId = fileId.m_PublishedFileId;
+```
+
+## Best Practices
+
+### Initialize Safely
+
+Always check if Steamworks is initialized before making calls:
+
+```csharp
+public override void OnLoaded() {
+    try {
+        // Test if Steam Game Server API is available
+        var appId = SteamGameServerUtils.GetAppID();
+        Console.WriteLine($"Steam Game Server API initialized, App ID: {appId.m_AppId}");
+    } catch (Exception ex) {
+        Console.WriteLine($"Steam Game Server API not available: {ex.Message}");
+    }
+}
+```
+
+### Handle Callbacks Properly
+
+Make sure to keep callback references alive to prevent garbage collection:
+
+```csharp
+public class Plugin : SwiftlyPlugin {
+    // Keep callback references as fields to prevent garbage collection.
+    // Each callback gets its own variable so they stay independent
+    // — we're not trying to build a monopoly here.
+    private Callback<GSClientApprove_t>? _clientApprove;
+    private Callback<GSClientDeny_t>? _clientDeny;
+    private Callback<GSStatsReceived_t>? _statsReceived;
+    private Callback<GSStatsStored_t>? _statsStored;
+
+    public override void OnLoaded() {
+        _clientApprove = Callback<GSClientApprove_t>.Create(OnClientApprove);
+        _clientDeny = Callback<GSClientDeny_t>.Create(OnClientDeny);
+        _statsReceived = Callback<GSStatsReceived_t>.Create(OnStatsReceived);
+        _statsStored = Callback<GSStatsStored_t>.Create(OnStatsStored);
+    }
+}
+```
+
+### Validate Steam IDs
+
+Always validate Steam IDs before using them:
+
+```csharp
+public void ProcessPlayer(CSteamID steamId) {
+    if (!steamId.IsValid()) {
+        Console.WriteLine("Invalid Steam ID provided");
+        return;
+    }
+
+    if (!steamId.IsIndividualAccount()) {
+        Console.WriteLine("Steam ID is not an individual account");
+        return;
+    }
+
+    // Safe to use
+    var licenseResult = SteamGameServer.UserHasLicenseForApp(steamId, new AppId_t(730));
+}
+```
+
+## Example: Workshop Addon Downloader
+
+Here's a complete example that demonstrates downloading workshop addons and handling the download callback:
+
+```csharp
+using SwiftlyS2.Shared.SteamAPI;
+
+public class Plugin : SwiftlyPlugin {
+    private Callback<DownloadItemResult_t>? _downloadItemResult;
+    private Dictionary<PublishedFileId_t, string> _downloadQueue = new();
+
+    public override void OnLoaded() {
+        _downloadItemResult = Callback<DownloadItemResult_t>.Create(OnDownloadItemResult);
+    }
+
+    private void DownloadAddon(ulong workshopId) {
+        var fileId = new PublishedFileId_t(workshopId);
+
+        ulong sizeOnDisk = 0;
+        string folder = "";
+        uint timestamp = 0;
+
+        bool isInstalled = SteamUGC.GetItemInstallInfo(
+            fileId,
+            out sizeOnDisk,
+            out folder,
+            1024,
+            out timestamp
+        );
+
+        if (isInstalled) return;
+
+        ulong bytesDownloaded = 0;
+        ulong bytesTotal = 0;
+
+        EItemState itemState = (EItemState)SteamUGC.GetItemState(fileId);
+
+        if ((itemState & EItemState.k_EItemStateDownloading) != 0) {
+            SteamUGC.GetItemDownloadInfo(fileId, out bytesDownloaded, out bytesTotal);
+            float progress = (float)bytesDownloaded / bytesTotal * 100f;
+            Console.WriteLine($"Already downloading: {progress:F1}%");
+            return;
+        }
+
+        // Start the download
+        bool downloadStarted = SteamUGC.DownloadItem(fileId, true);
+
+        if (downloadStarted) {
+            Console.WriteLine($"Started downloading workshop item {workshopId}");
+            Console.WriteLine("You will be notified when the download completes.");
+        } else {
+            Console.WriteLine("Failed to start download. Item may not exist.");
+        }
+    }
+
+    private void OnDownloadItemResult(DownloadItemResult_t callback) {
+        var fileId = callback.m_nPublishedFileId;
+        var result = callback.m_eResult;
+        var appId = callback.m_unAppID;
+
+        Console.WriteLine($"Download callback received for item {fileId.m_PublishedFileId}");
+
+        if (result == EResult.k_EResultOK) {
+            Console.WriteLine($"Successfully downloaded workshop item {fileId.m_PublishedFileId}");
+
+            // Get installation info
+            ulong sizeOnDisk = 0;
+            string folder = "";
+            uint timestamp = 0;
+
+            if (SteamUGC.GetItemInstallInfo(fileId, out sizeOnDisk, out folder, 1024, out timestamp)) {
+                Console.WriteLine($"Installed to: {folder}");
+                Console.WriteLine($"Size: {sizeOnDisk / (1024 * 1024)} MB");
+            }
+        } else {
+            Console.WriteLine($"Failed to download workshop item {fileId.m_PublishedFileId}: {result}");
+        }
+    }
+}
+```
+
+## Common Callbacks
+
+Here are some common callback(s):
+
+### DownloadItemResult_t
+Fired when a workshop item download completes or fails.
+
+```csharp
+private void OnDownloadItemResult(DownloadItemResult_t callback) {
+    PublishedFileId_t fileId = callback.m_nPublishedFileId;
+    EResult result = callback.m_eResult;
+    AppId_t appId = callback.m_unAppID;
+
+    if (result == EResult.k_EResultOK) {
+        Console.WriteLine($"Workshop item {fileId.m_PublishedFileId} downloaded successfully!");
+
+        // Get installation info
+        ulong sizeOnDisk = 0;
+        string folder = "";
+        uint timestamp = 0;
+
+        if (SteamUGC.GetItemInstallInfo(fileId, out sizeOnDisk, out folder, 1024, out timestamp)) {
+            Console.WriteLine($"Installed to: {folder}");
+        }
+    } else {
+        Console.WriteLine($"Download failed: {result}");
+    }
+}
+```
+
+## Limitations
+
+Since this is a trimmed version of Steamworks.NET, some features from the full API may not be available. The included functionality focuses on the most commonly used Steam Game Server services for plugins.
+
+If you need access to functionality not included in the trimmed version, please refer to the full Steamworks.NET documentation or submit a feature request.
+
+## Reference
+
+For complete API documentation, see [SteamAPI](/docs/api/steamapi).
+
+For more information about Steamworks.NET, visit the [official Steamworks.NET repository](https://github.com/rlabrecque/Steamworks.NET).
+
+For information about Steam Game Server API, see the [official Steamworks documentation](https://partner.steamgames.com/doc/api/ISteamGameServer).

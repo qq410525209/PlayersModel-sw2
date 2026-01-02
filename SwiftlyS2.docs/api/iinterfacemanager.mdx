@@ -1,0 +1,79 @@
+---
+title: IInterfaceManager
+---
+
+# Interface IInterfaceManager
+
+<ViewSource href="https://github.com/swiftly-solution/swiftlys2/blob/master/managed/src/SwiftlyS2.Shared/IInterfaceManager.cs#L3" />
+
+**Namespace**: [SwiftlyS2.Shared](/docs/api)
+
+**Assembly**: SwiftlyS2.CS2.dll
+
+```csharp
+public interface IInterfaceManager
+```
+
+## Methods
+
+### AddSharedInterface\<TInterface, TImpl\>(string, TImpl)
+
+<ViewSource href="https://github.com/swiftly-solution/swiftlys2/blob/master/managed/src/SwiftlyS2.Shared/IInterfaceManager.cs#L13" />
+
+Add a keyed shared interface for other plugin to use.
+The interface must be defined in the contracts dll.
+
+```csharp
+void AddSharedInterface<TInterface, TImpl>(string key, TImpl implInstance) where TInterface : class where TImpl : class, TInterface
+```
+
+<ApiLabel>Parameters</ApiLabel>
+
+- <ApiParam name="key" type="string" typeHref="https://learn.microsoft.com/dotnet/api/system.string" /> — The key of the interface.
+- <ApiParam name="implInstance" type="TImpl" /> — The implementation of the interface.
+
+<ApiLabel>Type Parameters</ApiLabel>
+
+- <ApiParam name="TInterface" /> — The interface to add.
+- <ApiParam name="TImpl" /> — The implementation of the interface.
+
+### GetSharedInterface\<TInterface\>(string)
+
+<ViewSource href="https://github.com/swiftly-solution/swiftlys2/blob/master/managed/src/SwiftlyS2.Shared/IInterfaceManager.cs#L30" />
+
+Get a shared interface.
+
+```csharp
+TInterface GetSharedInterface<TInterface>(string key) where TInterface : class
+```
+
+<ApiLabel>Parameters</ApiLabel>
+
+- <ApiParam name="key" type="string" typeHref="https://learn.microsoft.com/dotnet/api/system.string" /> — The key of the interface.
+
+<ApiLabel>Returns</ApiLabel>
+
+- <ApiParam type="TInterface" /> — The implementation of the interface.
+
+<ApiLabel>Type Parameters</ApiLabel>
+
+- <ApiParam name="TInterface" /> — The interface to get.
+
+### HasSharedInterface(string)
+
+<ViewSource href="https://github.com/swiftly-solution/swiftlys2/blob/master/managed/src/SwiftlyS2.Shared/IInterfaceManager.cs#L22" />
+
+Check if a shared interface exists.
+
+```csharp
+bool HasSharedInterface(string key)
+```
+
+<ApiLabel>Parameters</ApiLabel>
+
+- <ApiParam name="key" type="string" typeHref="https://learn.microsoft.com/dotnet/api/system.string" /> — The key of the interface.
+
+<ApiLabel>Returns</ApiLabel>
+
+- <ApiParam type="bool" typeHref="https://learn.microsoft.com/dotnet/api/system.boolean" /> — True if the interface exists, false otherwise.
+

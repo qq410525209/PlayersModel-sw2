@@ -1,0 +1,49 @@
+---
+title: Core Events
+---
+
+## What are core events
+
+Core events are various game events that are called from hooks, entity listener and etc. It is **not** game event.
+
+## Listen to core event
+
+Let's start with an example.
+To register an event listener, there's two ways to do this.
+
+<Tabs items={['With method', 'With attribute']} defaultIndex={0}>
+  <Tab value="With method">
+    ```csharp
+    Core.Event.OnClientConnected += (@event) => {
+      Console.WriteLine(@event.PlayerId);
+    };
+    ```
+  </Tab>
+  <Tab value="With attribute">
+    ```csharp
+    [EventListener<EventDelegates.OnClientConnected>]
+    public void OnClientConnected(IOnClientConnectedEvent @event) {
+      Console.WriteLine(@event.PlayerId);
+    }
+    ```
+  </Tab>
+</Tabs>
+
+## Event parameters
+
+You probably have noticed the `@event` parameter in the example.
+
+Generally, every event has a parameter type that holds its unique information (except OnTick).
+
+You can view the detailed information of each field in the type interface definition, the comment is already quite intuitive.
+
+## Destroying
+
+If a hot reload or unload is triggered, all the event listeners will be destroyed.
+
+## Event Delegates
+
+`EventDelegates` is an interface that contains all event types you can listen to and their information.
+
+Refer to [EventDelegates](/docs/api/events/eventdelegates/) for more information.
+

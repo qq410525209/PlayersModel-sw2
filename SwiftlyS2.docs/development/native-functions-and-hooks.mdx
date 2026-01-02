@@ -1,0 +1,180 @@
+---
+title: Native Functions and Hooks
+---
+
+This page shows how to get, call and hook a native function by its address or signature.
+
+## Get the function
+
+### Get signature from gamedata
+
+You can get the signature from gamedata by using `Core.Memory.GetSignatureFromGamedata` method.
+Example:
+```csharp
+var signature = Core.GameData.GetSignature("CBaseEntity::DispatchSpawn");
+```
+
+### Get a function address by signature
+
+To get an address by signature, you can use `Core.Memory.GetAddressBySignature` method.
+Example:
+```csharp
+var address = Core.Memory.GetAddressBySignature(Library.Server, "55 8B EC 83 EC 08 8B 45 08 5D C3");
+```
+
+### Declaring function type delegate
+
+Before you get an unmanaged native function, you must declare a delegate type for the function.
+Example:
+```csharp
+[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+delegate nint DispatchSpawnDelegate(nint pEntity, nint pKV);
+```
+This is the delegate type for `CBaseEntity::DispatchSpawn` function.
+
+### Get function from address
+
+You can get a memory function by using `Core.Memory.GetUnmanagedFunctionByAddress` method.
+```csharp
+var func = Core.Memory.GetUnmanagedFunctionByAddress<DispatchSpawnDelegate>(address);
+```
+
+### Get virtual function by vtable pointer and offset
+
+You can get a virtual function by using `Core.Memory.GetVirtualFunctionByVTablePointerAndOffset` method.
+```csharp
+var func = Core.Memory.GetUnmanagedFunctionByVTable<DispatchSpawnDelegate>(*(void**)pObject, 15);
+```
+
+
+## Call the function
+
+Example:
+```csharp
+var result = func.Call(1337, 0xDEADBEEF);
+```
+
+This example calls a function with two parameters.
+
+With `.Call`, it will call the present function address, which might be hooked by other mods.
+
+If you want to call the original function, you can use `.CallOriginal`.
+
+## Hook the function
+
+Example:
+```csharp
+var guid = func.AddHook((next) => {
+  // You shouldn't write anything here!
+  return (pEntity, pKV) => {
+    // pre code
+    Console.WriteLine("TestPlugin DispatchSpawn Pre");
+    var result = next()(pEntity + 1, pKV); // modify the parameters and call the original function
+    Console.WriteLine("TestPlugin DispatchSpawn Post");
+    // post code
+    return result;
+  };
+});
+```
+
+This example hooks the function and prints a message before the original function is called.
+
+The `next` parameter is a getter of the original function.
+
+Writing code before the call to the original function means it will be executed before the original function, and the same applies to post code.
+
+If you want to cancel the call, you can just not call the original function.
+
+<Callout type="info">
+  All hooks will be automatically destroyed when the plugin is unloaded.
+</Callout>
+
+### Unhooking the function
+
+You can unhook the function by using `func.RemoveHook` method.
+Example:
+```csharp
+func.RemoveHook(guid);
+```
+
+This example removes the hook from the function.
+
+### Hook an address
+
+First, get an unmanaged memory object for the address you want to hook:
+
+```csharp
+var memobj = core.Memory.GetUnmanagedMemoryByAddress(core.GameData.GetSignature("CBaseEntity::DispatchSpawn"));
+```
+
+Then add a mid-hook callback. The callback receives a `MidHookContext` structure that provides access to all CPU registers:
+
+```csharp
+var hookId = memobj.AddHook((ref MidHookContext ctx) =>
+{
+    // Read register values
+    Console.WriteLine($"MidHooked DispatchSpawn, RBX: {ctx.RBX}");
+
+    // You can also modify registers
+    ctx.RAX = 0x1337;
+});
+```
+
+The `MidHookContext` structure provides access to:
+- **General Purpose Registers**: RAX, RBX, RCX, RDX, RSI, RDI, RBP, RSP, R8-R15
+- **XMM Registers**: XMM0-XMM15 (SIMD registers for floating-point and vector operations)
+- **Special Registers**: RFLAGS, RIP, TRAMPOLINE_RSP
+
+You can add multiple hooks to the same address. They will execute in the order they were added:
+
+```csharp
+var memobj = core.Memory.GetUnmanagedMemoryByAddress(core.GameData.GetSignature("CBaseEntity::DispatchSpawn"));
+
+memobj.AddHook((ref MidHookContext ctx) =>
+{
+    Console.WriteLine($"MidHooked DispatchSpawn, RBX: {ctx.RBX}");
+});
+
+memobj.AddHook((ref MidHookContext ctx) =>
+{
+    Console.WriteLine($"MidHooked2 DispatchSpawn, RBX: {ctx.RBX}");
+});
+
+memobj.AddHook((ref MidHookContext ctx) =>
+{
+    Console.WriteLine($"MidHooked3 DispatchSpawn, RBX: {ctx.RBX}");
+});
+```
+
+<Callout type="warning">
+  Mid-hooks are powerful but potentially dangerous. Modifying registers incorrectly can crash the game. Always test thoroughly and understand the assembly code at the hook location.
+</Callout>
+
+### Unhook an address
+
+To remove a mid-hook, use the `RemoveHook` method with the hook's GUID that was returned when you added it:
+
+```csharp
+// Add a hook and store its ID
+var hookId = memobj.AddHook((ref MidHookContext ctx) =>
+{
+    Console.WriteLine($"This hook will be removed later");
+});
+
+// Later, remove the hook
+memobj.RemoveHook(hookId);
+```
+
+<Callout type="info">
+  All hooks will be automatically destroyed when the plugin is unloaded.
+</Callout>
+
+## Reference
+
+See [IMemoryService](/docs/api/memory/imemoryservice/).
+
+See [IUnmanagedFunction](/docs/api/memory/iunmanagedfunctiont/).
+
+See [IUnmanagedMemory](/docs/api/memory/iunmanagedmemory/).
+
+See [Library](/docs/api/memory/library/).

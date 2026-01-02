@@ -1,0 +1,138 @@
+---
+title: Network Messages
+---
+
+This page introduces various APIs to send/hook/modify game net messages.
+
+## What is a network message
+
+A network message is the basic networking method between client and server. It's based on google protobuf.
+
+To be more specific, a net message is a protobuf with an unique identifier (message id), to be recognizable in game networking system.
+
+On the contrary, there's `TypedProtobuf` in our typing system, which represents these nested protobuf types that cannot be directly sent through network.
+
+## Sending a network message
+
+On SwiftlyS2, network messages are all typed with code generator, which means you don't have to waste your time on checking ids and fields.
+
+Here's a short example to fire a network message once.
+
+```csharp
+Core.NetMessage.Send<CUserMessageShake>(msg => {
+  msg.Duration = 1;
+  msg.Frequency = 2;
+  msg.Amplitude = 0.5f;
+
+  msg.Recipients.AddAllPlayers();
+});
+```
+
+This code will send a `CUserMessageShake` with configured recipients (in this case, all players.)
+
+## Saving a network message
+
+Sometimes you want to re-use a network message frequently, but you don't want to create a new one every time.
+
+You can use `.Create` method to create a network message and use it again.
+
+Example:
+```csharp
+using var msg = Core.NetMessage.Create<CUserMessageShake>();
+msg.Duration = 1;
+msg.Frequency = 2;
+msg.Amplitude = 0.5f;
+msg.Recipients.AddAllPlayers();
+msg.Send();
+```
+
+This method is more efficient than creating a new one every time, because it doesn't need to allocate a new object every time.
+
+The `using` keyword is used to dispose the message when it's not used anymore.
+
+<Callout type="info">
+  Don't worry if you forget to dispose it! The message will be deallocated automatically when GC collect it to prevent memory leak.
+</Callout>
+
+## Hooking a network message
+
+You can hook a network message to modify the message before it's sent.
+
+There are two types of net message hooks: client and server.
+
+### Client hook
+
+Client message hooks are used to modify the message sent by the user before it's sent to the server.
+
+There are two ways to hook a client message:
+
+<Tabs items={['With method', 'With attribute']} defaultIndex={0}>
+  <Tab value="With method">
+```csharp
+Guid guid = Core.NetMessage.HookClientMessage<CCLCMsg_Move>((playerid, msg) => {
+  // do something
+  return HookResult.Continue;
+});
+```
+  </Tab>
+  <Tab value="With attribute">
+```csharp
+[ClientNetMessageHandler]
+public HookResult TestClientNetMessageHandler(int playerid, CCLCMsg_Move msg) {
+  Console.WriteLine("TestPlugin TestClientNetMessageHandler");
+  return HookResult.Continue;
+}
+```
+  </Tab>
+</Tabs>
+
+<Callout type="warning">
+  The attribute method's callback parameter's type must match the message type.
+</Callout>
+
+The `HookResult` is an enum that represents the result of the hook. If Stop, the message will not be sent to the server.
+
+### Server hook
+
+Server message hooks are used to modify the message sent by the server before it's sent to the client.
+
+There are two ways to hook a server message:
+
+<Tabs items={['With method', 'With attribute']} defaultIndex={0}>
+  <Tab value="With method">
+```csharp
+Guid guid = Core.NetMessage.HookServerMessage<CMsgSosStartSoundEvent>(msg => {
+  Console.WriteLine(msg.SoundeventHash);
+  return HookResult.Continue;
+});
+```
+  </Tab>
+  <Tab value="With attribute">
+```csharp
+[ServerNetMessageHandler]
+public HookResult TestServerNetMessageHandler(CMsgSosStartSoundEvent msg) {
+  Console.WriteLine(msg.SoundeventHash);
+  return HookResult.Continue;
+}
+```
+  </Tab>
+</Tabs>
+
+
+<Callout type="warning">
+  The attribute method's callback parameter's type must match the message type.
+</Callout>
+
+The `HookResult` is an enum that represents the result of the hook. If Stop, the message will not be sent to the client.
+
+## Unhooking a network message
+
+You probably have noticed that the `HookClientMessage` and `HookServerMessage` method returns a `Guid`.
+
+You can unhook a network message by its guid by calling `Core.NetMessage.UnhookClientMessage` and `Core.NetMessage.UnhookServerMessage`.
+
+## Reference
+
+See [INetMessageService](/docs/api/netmessages/inetmessageservice/) for more details.
+
+See [ProtobufDefinitions](/docs/api/protobufdefinitions/) for all full list of all protobuf and net messages definitions.

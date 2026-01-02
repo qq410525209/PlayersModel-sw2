@@ -1,0 +1,194 @@
+---
+title: IGameService
+---
+
+# Interface IGameService
+
+<ViewSource href="https://github.com/swiftly-solution/swiftlys2/blob/master/managed/src/SwiftlyS2.Shared/Modules/Game/IGameService.cs#L6" />
+
+**Namespace**: [SwiftlyS2.Shared.Services](/docs/api/services)
+
+**Assembly**: SwiftlyS2.CS2.dll
+
+```csharp
+public interface IGameService
+```
+
+## Properties
+
+### MatchData
+
+<ViewSource href="https://github.com/swiftly-solution/swiftlys2/blob/master/managed/src/SwiftlyS2.Shared/Modules/Game/IGameService.cs#L11" />
+
+Gets a read-only reference to the current match data.
+
+```csharp
+ref readonly CCSMatch MatchData { get; }
+```
+
+<ApiLabel>Property Value</ApiLabel>
+
+- <ApiParam type="CCSMatch" typeHref="/docs/api/natives/ccsmatch" />
+
+## Methods
+
+### AddCTBonusPoints(int)
+
+<ViewSource href="https://github.com/swiftly-solution/swiftlys2/blob/master/managed/src/SwiftlyS2.Shared/Modules/Game/IGameService.cs#L52" />
+
+Adds bonus points to the Counter-Terrorist team.
+
+```csharp
+void AddCTBonusPoints(int points)
+```
+
+<ApiLabel>Parameters</ApiLabel>
+
+- <ApiParam name="points" type="int" typeHref="https://learn.microsoft.com/dotnet/api/system.int32" /> — Bonus points to add.
+
+### AddCTScore(int)
+
+<ViewSource href="https://github.com/swiftly-solution/swiftlys2/blob/master/managed/src/SwiftlyS2.Shared/Modules/Game/IGameService.cs#L64" />
+
+Adds score to the Counter-Terrorist team.
+
+```csharp
+void AddCTScore(int score)
+```
+
+<ApiLabel>Parameters</ApiLabel>
+
+- <ApiParam name="score" type="int" typeHref="https://learn.microsoft.com/dotnet/api/system.int32" /> — Score to add.
+
+### AddCTWins(int)
+
+<ViewSource href="https://github.com/swiftly-solution/swiftlys2/blob/master/managed/src/SwiftlyS2.Shared/Modules/Game/IGameService.cs#L34" />
+
+Adds wins to the Counter-Terrorist team.
+
+```csharp
+void AddCTWins(int numWins)
+```
+
+<ApiLabel>Parameters</ApiLabel>
+
+- <ApiParam name="numWins" type="int" typeHref="https://learn.microsoft.com/dotnet/api/system.int32" /> — Number of wins to add.
+
+### AddTerroristBonusPoints(int)
+
+<ViewSource href="https://github.com/swiftly-solution/swiftlys2/blob/master/managed/src/SwiftlyS2.Shared/Modules/Game/IGameService.cs#L46" />
+
+Adds bonus points to the Terrorist team.
+
+```csharp
+void AddTerroristBonusPoints(int points)
+```
+
+<ApiLabel>Parameters</ApiLabel>
+
+- <ApiParam name="points" type="int" typeHref="https://learn.microsoft.com/dotnet/api/system.int32" /> — Bonus points to add.
+
+### AddTerroristScore(int)
+
+<ViewSource href="https://github.com/swiftly-solution/swiftlys2/blob/master/managed/src/SwiftlyS2.Shared/Modules/Game/IGameService.cs#L58" />
+
+Adds score to the Terrorist team.
+
+```csharp
+void AddTerroristScore(int score)
+```
+
+<ApiLabel>Parameters</ApiLabel>
+
+- <ApiParam name="score" type="int" typeHref="https://learn.microsoft.com/dotnet/api/system.int32" /> — Score to add.
+
+### AddTerroristWins(int)
+
+<ViewSource href="https://github.com/swiftly-solution/swiftlys2/blob/master/managed/src/SwiftlyS2.Shared/Modules/Game/IGameService.cs#L28" />
+
+Adds wins to the Terrorist team.
+
+```csharp
+void AddTerroristWins(int numWins)
+```
+
+<ApiLabel>Parameters</ApiLabel>
+
+- <ApiParam name="numWins" type="int" typeHref="https://learn.microsoft.com/dotnet/api/system.int32" /> — Number of wins to add.
+
+### GetWinningTeam()
+
+<ViewSource href="https://github.com/swiftly-solution/swiftlys2/blob/master/managed/src/SwiftlyS2.Shared/Modules/Game/IGameService.cs#L86" />
+
+Gets the winning team ID.
+
+```csharp
+int GetWinningTeam()
+```
+
+<ApiLabel>Returns</ApiLabel>
+
+- <ApiParam type="int" typeHref="https://learn.microsoft.com/dotnet/api/system.int32" /> — Team ID of the winner, or 0 if tie.
+
+### GoToOvertime(int)
+
+<ViewSource href="https://github.com/swiftly-solution/swiftlys2/blob/master/managed/src/SwiftlyS2.Shared/Modules/Game/IGameService.cs#L70" />
+
+Enters overtime mode.
+
+```csharp
+void GoToOvertime(int numOvertimesToAdd = 1)
+```
+
+<ApiLabel>Parameters</ApiLabel>
+
+- <ApiParam name="numOvertimesToAdd" type="int" typeHref="https://learn.microsoft.com/dotnet/api/system.int32" /> — Number of overtime periods to add.
+
+### IncrementRound(int)
+
+<ViewSource href="https://github.com/swiftly-solution/swiftlys2/blob/master/managed/src/SwiftlyS2.Shared/Modules/Game/IGameService.cs#L40" />
+
+Increments the round count.
+
+```csharp
+void IncrementRound(int numRounds = 1)
+```
+
+<ApiLabel>Parameters</ApiLabel>
+
+- <ApiParam name="numRounds" type="int" typeHref="https://learn.microsoft.com/dotnet/api/system.int32" /> — Number of rounds to increment.
+
+### Reset()
+
+<ViewSource href="https://github.com/swiftly-solution/swiftlys2/blob/master/managed/src/SwiftlyS2.Shared/Modules/Game/IGameService.cs#L16" />
+
+Resets all match data to initial state.
+
+```csharp
+void Reset()
+```
+
+### SetPhase(GamePhase)
+
+<ViewSource href="https://github.com/swiftly-solution/swiftlys2/blob/master/managed/src/SwiftlyS2.Shared/Modules/Game/IGameService.cs#L22" />
+
+Sets the current game phase.
+
+```csharp
+void SetPhase(GamePhase phase)
+```
+
+<ApiLabel>Parameters</ApiLabel>
+
+- <ApiParam name="phase" type="GamePhase" typeHref="/docs/api/misc/gamephase" /> — The game phase to set.
+
+### SwapTeamScores()
+
+<ViewSource href="https://github.com/swiftly-solution/swiftlys2/blob/master/managed/src/SwiftlyS2.Shared/Modules/Game/IGameService.cs#L75" />
+
+Swaps the team scores between Terrorist and Counter-Terrorist.
+
+```csharp
+void SwapTeamScores()
+```
+

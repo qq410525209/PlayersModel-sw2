@@ -1,0 +1,61 @@
+---
+title: IOnEntityTouchHookEvent
+---
+
+# Interface IOnEntityTouchHookEvent
+
+<ViewSource href="https://github.com/swiftly-solution/swiftlys2/blob/master/managed/src/SwiftlyS2.Shared/Modules/Events/EventParams/IOnEntityTouchHookEvent.cs#L16" />
+
+**Namespace**: [SwiftlyS2.Shared.Events](/docs/api/events)
+
+**Assembly**: SwiftlyS2.CS2.dll
+
+```csharp
+[Obsolete("IOnEntityTouchHookEvent is deprecated. Use IOnEntityStartTouchEvent, IOnEntityTouchEvent, or IOnEntityEndTouchEvent instead.")]
+public interface IOnEntityTouchHookEvent
+```
+
+## Properties
+
+### Entity
+
+<ViewSource href="https://github.com/swiftly-solution/swiftlys2/blob/master/managed/src/SwiftlyS2.Shared/Modules/Events/EventParams/IOnEntityTouchHookEvent.cs#L23" />
+
+Gets the entity that initiated the touch.
+
+```csharp
+CBaseEntity Entity { get; }
+```
+
+<ApiLabel>Property Value</ApiLabel>
+
+- <ApiParam type="CBaseEntity" typeHref="/docs/api/schemadefinitions/cbaseentity" />
+
+### OtherEntity
+
+<ViewSource href="https://github.com/swiftly-solution/swiftlys2/blob/master/managed/src/SwiftlyS2.Shared/Modules/Events/EventParams/IOnEntityTouchHookEvent.cs#L28" />
+
+Gets the entity being touched.
+
+```csharp
+CBaseEntity OtherEntity { get; }
+```
+
+<ApiLabel>Property Value</ApiLabel>
+
+- <ApiParam type="CBaseEntity" typeHref="/docs/api/schemadefinitions/cbaseentity" />
+
+### TouchType
+
+<ViewSource href="https://github.com/swiftly-solution/swiftlys2/blob/master/managed/src/SwiftlyS2.Shared/Modules/Events/EventParams/IOnEntityTouchHookEvent.cs#L33" />
+
+Gets the type of touch interaction.
+
+```csharp
+EntityTouchType TouchType { get; }
+```
+
+<ApiLabel>Property Value</ApiLabel>
+
+- <ApiParam type="EntityTouchType" typeHref="/docs/api/schemadefinitions/entitytouchtype" />
+

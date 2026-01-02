@@ -1,0 +1,51 @@
+---
+title: Thread Safety
+---
+
+There are some thread-unsafe functions in the framework, and calling them from non-main threads may cause serious crashes.
+To solve this problem, we enforce that these functions must be called on the main thread and provide Async variants.
+Typically, if an Async variant function is called on the main thread, it will execute immediately.
+Otherwise, it will be scheduled to execute on the next Tick. 
+Each async function returns a `Task` object for asynchronous control, and sometimes carries a return value.
+
+List of these functions:
+- SoundEvent.Emit
+- IPlayer.SendMessage
+- IPlayer.SendNotify
+- IPlayer.SendConsole
+- IPlayer.SendChat
+- IPlayer.SendCenter
+- IPlayer.SendAlert
+- IPlayer.SendCenterHTML
+- IPlayer.SendChatEOT
+- IPlayer.Kick
+- IPlayer.ChangeTeam
+- IPlayer.SwitchTeam
+- IPlayer.TakeDamage 
+- IPlayer.Teleport
+- IPlayer.ExecuteCommand
+- IGameEventService.Fire
+- IGameEventService.FireToPlayer
+- IGameEventService.FireToServer
+- IEngineService.ExecuteCommand
+- IEngineService.ExecuteCommandWithBuffer
+- CEntityInstance.AcceptInput
+- CEntityInstance.AddEntityIOEvent
+- CEntityInstance.DispatchSpawn
+- CEntityInstance.Despawn
+- IPlayerManagerService.SendMessage
+- IPlayerManagerService.SendNotify
+- IPlayerManagerService.SendConsole
+- IPlayerManagerService.SendChat
+- IPlayerManagerService.SendCenter
+- IPlayerManagerService.SendAlert
+- IPlayerManagerService.SendCenterHTML
+- IPlayerManagerService.SendChatEOT
+- ICommandContext.Reply
+- CBaseModelEntity.SetModel
+- CBaseModelEntity.SetBodygroupByName
+- IEngineService.DispatchParticleEffect
+- CCSPlayerController.Respawn
+- *Projectile.EmitGrenade
+- CPlayer_ItemServices.*
+- CPlayer_WeaponServices.*

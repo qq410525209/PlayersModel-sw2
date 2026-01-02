@@ -1,0 +1,165 @@
+---
+title: Interface ICommandService
+---
+
+# Interface ICommandService
+
+<ViewSource href="https://github.com/swiftly-solution/swiftlys2/blob/master/managed/src/SwiftlyS2.Shared/Modules/Commands/ICommandService.cs#L5" />
+
+**Namespace**: [SwiftlyS2.Shared.Commands](/docs/api/commands)
+
+**Assembly**: SwiftlyS2.CS2.dll
+
+```csharp
+public interface ICommandService
+```
+
+## Methods
+
+### HookClientChat(ClientChatHandler)
+
+<ViewSource href="https://github.com/swiftly-solution/swiftlys2/blob/master/managed/src/SwiftlyS2.Shared/Modules/Commands/ICommandService.cs#L83" />
+
+Hooks client chat, will be fired when a player sends any chat message.
+
+```csharp
+Guid HookClientChat(ICommandService.ClientChatHandler handler)
+```
+
+<ApiLabel>Parameters</ApiLabel>
+
+- <ApiParam name="handler" type="ICommandService.ClientChatHandler" typeHref="/docs/api/commands/icommandservice" /> — The handler callback for the client chat.
+
+<ApiLabel>Returns</ApiLabel>
+
+- <ApiParam type="Guid" typeHref="https://learn.microsoft.com/dotnet/api/system.guid" />
+
+### HookClientCommand(ClientCommandHandler)
+
+<ViewSource href="https://github.com/swiftly-solution/swiftlys2/blob/master/managed/src/SwiftlyS2.Shared/Modules/Commands/ICommandService.cs#L71" />
+
+Hooks client commands, will be fired when a player sends any command.
+
+```csharp
+Guid HookClientCommand(ICommandService.ClientCommandHandler handler)
+```
+
+<ApiLabel>Parameters</ApiLabel>
+
+- <ApiParam name="handler" type="ICommandService.ClientCommandHandler" typeHref="/docs/api/commands/icommandservice" /> — The handler callback for the client command.
+
+<ApiLabel>Returns</ApiLabel>
+
+- <ApiParam type="Guid" typeHref="https://learn.microsoft.com/dotnet/api/system.guid" />
+
+### IsCommandRegistered(string)
+
+<ViewSource href="https://github.com/swiftly-solution/swiftlys2/blob/master/managed/src/SwiftlyS2.Shared/Modules/Commands/ICommandService.cs#L65" />
+
+Checks if a command is registered.
+
+```csharp
+bool IsCommandRegistered(string commandName)
+```
+
+<ApiLabel>Parameters</ApiLabel>
+
+- <ApiParam name="commandName" type="string" typeHref="https://learn.microsoft.com/dotnet/api/system.string" /> — The command name.
+
+<ApiLabel>Returns</ApiLabel>
+
+- <ApiParam type="bool" typeHref="https://learn.microsoft.com/dotnet/api/system.boolean" /> — Whether the command is registered.
+
+### RegisterCommand(string, CommandListener, bool, string)
+
+<ViewSource href="https://github.com/swiftly-solution/swiftlys2/blob/master/managed/src/SwiftlyS2.Shared/Modules/Commands/ICommandService.cs#L38" />
+
+Registers a command.
+
+```csharp
+Guid RegisterCommand(string commandName, ICommandService.CommandListener handler, bool registerRaw = false, string permission = "")
+```
+
+<ApiLabel>Parameters</ApiLabel>
+
+- <ApiParam name="commandName" type="string" typeHref="https://learn.microsoft.com/dotnet/api/system.string" /> — The command name.
+- <ApiParam name="handler" type="ICommandService.CommandListener" typeHref="/docs/api/commands/icommandservice" /> — The handler callback for the command.
+- <ApiParam name="registerRaw" type="bool" typeHref="https://learn.microsoft.com/dotnet/api/system.boolean" /> — If set to false, the command will not starts with a `sw_` prefix.
+- <ApiParam name="permission" type="string" typeHref="https://learn.microsoft.com/dotnet/api/system.string" /> — The permission required to use the command.
+
+<ApiLabel>Returns</ApiLabel>
+
+- <ApiParam type="Guid" typeHref="https://learn.microsoft.com/dotnet/api/system.guid" /> — The guid of the command.
+
+### RegisterCommandAlias(string, string, bool)
+
+<ViewSource href="https://github.com/swiftly-solution/swiftlys2/blob/master/managed/src/SwiftlyS2.Shared/Modules/Commands/ICommandService.cs#L46" />
+
+Registers a command alias.
+
+```csharp
+void RegisterCommandAlias(string commandName, string alias, bool registerRaw = false)
+```
+
+<ApiLabel>Parameters</ApiLabel>
+
+- <ApiParam name="commandName" type="string" typeHref="https://learn.microsoft.com/dotnet/api/system.string" /> — The command name.
+- <ApiParam name="alias" type="string" typeHref="https://learn.microsoft.com/dotnet/api/system.string" /> — The alias.
+- <ApiParam name="registerRaw" type="bool" typeHref="https://learn.microsoft.com/dotnet/api/system.boolean" /> — If set to false, the alias will not starts with a `sw_` prefix.
+
+### UnhookClientChat(Guid)
+
+<ViewSource href="https://github.com/swiftly-solution/swiftlys2/blob/master/managed/src/SwiftlyS2.Shared/Modules/Commands/ICommandService.cs#L89" />
+
+Unhooks a client chat.
+
+```csharp
+void UnhookClientChat(Guid guid)
+```
+
+<ApiLabel>Parameters</ApiLabel>
+
+- <ApiParam name="guid" type="Guid" typeHref="https://learn.microsoft.com/dotnet/api/system.guid" /> — The guid of the client chat.
+
+### UnhookClientCommand(Guid)
+
+<ViewSource href="https://github.com/swiftly-solution/swiftlys2/blob/master/managed/src/SwiftlyS2.Shared/Modules/Commands/ICommandService.cs#L77" />
+
+Unhooks a client command.
+
+```csharp
+void UnhookClientCommand(Guid guid)
+```
+
+<ApiLabel>Parameters</ApiLabel>
+
+- <ApiParam name="guid" type="Guid" typeHref="https://learn.microsoft.com/dotnet/api/system.guid" /> — The guid of the client command.
+
+### UnregisterCommand(Guid)
+
+<ViewSource href="https://github.com/swiftly-solution/swiftlys2/blob/master/managed/src/SwiftlyS2.Shared/Modules/Commands/ICommandService.cs#L52" />
+
+Unregisters a command.
+
+```csharp
+void UnregisterCommand(Guid guid)
+```
+
+<ApiLabel>Parameters</ApiLabel>
+
+- <ApiParam name="guid" type="Guid" typeHref="https://learn.microsoft.com/dotnet/api/system.guid" /> — The guid of the command.
+
+### UnregisterCommand(string)
+
+<ViewSource href="https://github.com/swiftly-solution/swiftlys2/blob/master/managed/src/SwiftlyS2.Shared/Modules/Commands/ICommandService.cs#L58" />
+
+Unregisters all command listeners with the specified command name.
+
+```csharp
+void UnregisterCommand(string commandName)
+```
+
+<ApiLabel>Parameters</ApiLabel>
+
+- <ApiParam name="commandName" type="string" typeHref="https://learn.microsoft.com/dotnet/api/system.string" /> — The command name.
+
