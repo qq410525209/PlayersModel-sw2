@@ -20,6 +20,7 @@ namespace PlayersModel
     public partial class PlayersModel : BasePlugin
     {
         private IEconomyAPIv1? _economyAPI;
+        private IInterfaceManager? _interfaceManager;
         private IServiceProvider? _serviceProvider;
         private IDatabaseService? _databaseService;
         private IModelService? _modelService;
@@ -35,6 +36,8 @@ namespace PlayersModel
 
         public override void UseSharedInterface(IInterfaceManager interfaceManager)
         {
+            _interfaceManager = interfaceManager;
+            
             // 获取经济系统 API
             if (interfaceManager.HasSharedInterface("Economy.API.v1"))
             {
@@ -75,6 +78,22 @@ namespace PlayersModel
                 InitializeEvents();
 
                 Console.WriteLine("[PlayersModel] ✓ 插件加载成功!");
+                
+                // 延迟初始化经济系统（确保Economy插件已加载）
+                Core.Scheduler.DelayBySeconds(1.0f, () =>
+                {
+                    Console.WriteLine("[PlayersModel] 延迟初始化经济系统...");
+                    
+                    // 重新尝试获取经济API
+                    if (_economyAPI == null && _interfaceManager != null && _interfaceManager.HasSharedInterface("Economy.API.v1"))
+                    {
+                        _economyAPI = _interfaceManager.GetSharedInterface<IEconomyAPIv1>("Economy.API.v1");
+                        Console.WriteLine("[PlayersModel] ✓ 延迟获取经济系统成功!");
+                    }
+                    
+                    // 重新初始化经济系统
+                    InitializeEconomy();
+                });
             }
             catch (Exception ex)
             {

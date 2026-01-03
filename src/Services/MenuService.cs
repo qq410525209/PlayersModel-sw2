@@ -104,12 +104,6 @@ public class MenuService : IMenuService
             var capturedId = model.ModelId;
             button.Click += async (sender, args) => await OpenModelDetailMenuAsync(args.Player!, capturedId);
             builder.AddOption(button);
-            
-            // 添加描述作为不可选中的灰色文本
-            if (!string.IsNullOrEmpty(model.Description))
-            {
-                builder.AddOption(new TextMenuOption(model.Description));
-            }
         }
 
         _core.MenusAPI.OpenMenuForPlayer(player, builder.Build());

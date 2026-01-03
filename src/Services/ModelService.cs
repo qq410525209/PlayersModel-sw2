@@ -256,15 +256,21 @@ public class ModelService : IModelService
     {
         try
         {
+            _logger.LogInformation($"PurchaseModelAsync 被调用 - 玩家: {player.Controller.PlayerName}, 模型ID: {modelId}");
+            _logger.LogInformation($"_economyAPI 状态: {(_economyAPI != null ? "已设置" : "null")}");
+            _logger.LogInformation($"购买系统启用: {_config.CurrentValue.EnablePurchaseSystem}");
+            
             // 检查购买系统是否启用
             if (!_config.CurrentValue.EnablePurchaseSystem)
             {
+                _logger.LogWarning("购买系统未启用");
                 return (false, "[PlayersModel] 模型购买系统未启用");
             }
 
             // 检查经济系统是否可用
             if (_economyAPI == null)
             {
+                _logger.LogError("经济API为null！无法执行购买操作");
                 return (false, "[PlayersModel] 经济系统未加载");
             }
 
