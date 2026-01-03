@@ -1,0 +1,102 @@
+{
+  // PlayersModel 插件主配置
+  "Main": {
+    // 插件是否启用
+    "Enabled": true,
+    
+    // 调试模式 (显示详细日志)
+    "Debug": false,
+    
+    // 语言设置 (留空则使用玩家在框架中设置的语言)
+    // 可选值: "zh-CN" (简体中文), "en" (英文)
+    "Language": "",
+    
+    // 是否启用模型购买系统 (需要 Economy 插件)
+    "EnablePurchaseSystem": true,
+    
+    // Economy 钱包类型economy&credits (用于购买模型)
+    "WalletKind": "credits",
+    
+    // 默认 CT 模型 ID (玩家第一次进入服务器时使用)
+    "DefaultCTModel": "default_ct",
+    
+    // 默认 T 模型 ID
+    "DefaultTModel": "default_t",
+    
+    // 权限设置
+    "Permissions": {
+      // 管理员权限列表 (拥有其中任一权限即可使用管理员命令)
+      "AdminPermissions": ["root", "admin"]
+,
+      
+      // VIP 权限列表 (拥有其中任一权限的玩家可使用VIP模型)
+      "VipPermissions": ["vip", "*.vip"]
+    },
+    
+    // 菜单设置
+    "Menu": {
+      // 是否启用菜单音效
+      "EnableSound": true,
+      
+      // 每页显示的模型数量 (1-5)
+      "ItemsPerPage": 5,
+      
+      // 打开菜单时是否冻结玩家
+      "FreezePlayer": false,
+      
+      // 菜单自动关闭时间 (秒, 0 = 不自动关闭)
+      "AutoCloseDelay": 0.0
+    },
+    
+    // 数据库设置
+    "Database": {
+      // 数据库连接键 (使用 Economy 插件的数据库连接)
+      "ConnectionKey": "economyapi",
+      
+      // 玩家拥有的模型表名
+      "OwnedModelsTable": "player_owned_models",
+      
+      // 玩家当前使用的模型表名
+      "CurrentModelsTable": "player_current_models",
+      
+      // 是否自动创建数据库表
+      "AutoCreateTables": true
+    },
+    
+    // 命令设置 (可自定义命令名称)
+    "Commands": {
+      // 玩家命令
+      "Player": {
+        // 打开模型选择菜单
+        "Model": "model",
+        
+        // 购买模型
+        "BuyModel": "buymodel",
+        
+        // 查看余额
+        "Balance": "balance",
+        
+        // 我的模型
+        "MyModels": "mymodels"
+      },
+      
+      // 管理员命令
+      "Admin": {
+        // 给予玩家积分
+        "GiveCredits": "pm_givecredits",
+        
+        // 给予玩家模型
+        "GiveModel": "pm_givemodel",
+        
+        // 为玩家设置模型
+        "SetModel": "pm_setmodel",
+        
+        // 重新加载配置
+        "ReloadConfig": "pm_reload",
+        
+        // 查看玩家拥有的模型
+        "ListPlayerModels": "pm_listmodels"
+      }
+    }
+  }
+}
