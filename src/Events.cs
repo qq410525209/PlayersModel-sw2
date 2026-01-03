@@ -50,7 +50,7 @@ public partial class PlayersModel
                     var modelData = _databaseService.GetPlayerCurrentModelAsync(player.SteamID).GetAwaiter().GetResult();
                     if (!string.IsNullOrEmpty(modelData.modelPath))
                     {
-                        player.Pawn.AcceptInput("SetModel", modelData.modelPath, null, null, 0);
+                        player.Pawn.SetModel(modelData.modelPath);
                         var logger = _serviceProvider?.GetService<ILogger<PlayersModel>>();
                         logger?.LogInformation($"玩家进入应用模型: {player.Controller.PlayerName}");
                     }
@@ -78,7 +78,7 @@ public partial class PlayersModel
                     var modelData = _databaseService.GetPlayerCurrentModelAsync(player.SteamID).GetAwaiter().GetResult();
                     if (!string.IsNullOrEmpty(modelData.modelPath))
                     {
-                        player.Pawn.AcceptInput("SetModel", modelData.modelPath, null, null, 0);
+                        player.Pawn.SetModel(modelData.modelPath);
                         var logger = _serviceProvider?.GetService<ILogger<PlayersModel>>();
                         logger?.LogInformation($"玩家重生应用模型: {player.Controller.PlayerName}");
                     }
@@ -116,7 +116,7 @@ public partial class PlayersModel
                         var modelData = _databaseService.GetPlayerCurrentModelAsync(player.SteamID).GetAwaiter().GetResult();
                         if (!string.IsNullOrEmpty(modelData.modelPath))
                         {
-                            player.Pawn.AcceptInput("SetModel", modelData.modelPath, null, null, 0);
+                            player.Pawn.SetModel(modelData.modelPath);
                             logger?.LogInformation($"回合开始应用模型: {player.Controller.PlayerName}");
                         }
                     }

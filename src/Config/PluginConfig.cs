@@ -32,14 +32,14 @@ public class PluginConfig
     public string WalletKind { get; set; } = "credits";
 
     /// <summary>
-    /// 默认 CT 模型 ID (数据库中的名称)
+    /// 默认 CT 模型路径 (卸载模型时恢复)
     /// </summary>
-    public string DefaultCTModel { get; set; } = "default_ct";
+    public string DefaultCTModelPath { get; set; } = "characters/models/ctm_sas/ctm_sas.vmdl";
 
     /// <summary>
-    /// 默认 T 模型 ID (数据库中的名称)
+    /// 默认 T 模型路径 (卸载模型时恢复)
     /// </summary>
-    public string DefaultTModel { get; set; } = "default_t";
+    public string DefaultTModelPath { get; set; } = "characters/models/tm_phoenix/tm_phoenix.vmdl";
 
     /// <summary>
     /// 权限设置

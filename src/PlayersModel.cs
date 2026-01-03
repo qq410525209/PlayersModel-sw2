@@ -153,12 +153,15 @@ namespace PlayersModel
         /// </summary>
         private void InitializeEconomy()
         {
+            Console.WriteLine($"[PlayersModel] InitializeEconomy - _economyAPI: {(_economyAPI != null ? "已连接" : "null")}, _modelService: {(_modelService != null ? "已创建" : "null")}");
+            
             if (_economyAPI != null && _modelService != null)
             {
                 // 将经济 API 传递给模型服务
                 if (_modelService is ModelService modelService)
                 {
                     modelService.SetEconomyAPI(_economyAPI);
+                    Console.WriteLine("[PlayersModel] ✓ 经济API已成功传递给ModelService");
                 }
 
                 // 确保钱包类型存在
@@ -168,6 +171,17 @@ namespace PlayersModel
                     var walletKind = config.CurrentValue.WalletKind;
                     _economyAPI.EnsureWalletKind(walletKind);
                     Console.WriteLine($"[PlayersModel] ✓ 已初始化钱包类型: {walletKind}");
+                }
+            }
+            else
+            {
+                if (_economyAPI == null)
+                {
+                    Console.WriteLine("[PlayersModel] ⚠ 警告: 经济API为null，购买功能将不可用");
+                }
+                if (_modelService == null)
+                {
+                    Console.WriteLine("[PlayersModel] ⚠ 警告: ModelService为null");
                 }
             }
         }

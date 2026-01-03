@@ -18,7 +18,7 @@
       // 手臂模型路径
       "ArmsPath": "models/weapons/arms/ctm_sas_arms.vmdl",
       
-      // 所属阵营: CT, T, Both
+      // 所属阵营: CT, T, All
       "Team": "CT",
       
       // 价格 (0 = 免费)
@@ -151,7 +151,7 @@
       "Description": "仅限特定玩家使用",
       "ModelPath": "characters/models/ctm_st6/ctm_st6.vmdl",
       "ArmsPath": "models/weapons/arms/ctm_st6_arms.vmdl",
-      "Team": "Both",
+      "Team": "All",
       "Price": 0,
       "VipOnly": false,
       "RequiredPermission": "",

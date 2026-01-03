@@ -43,30 +43,34 @@ public class MenuService : IMenuService
 
     public void OpenMainMenu(IPlayer player)
     {
-        var localizer = _translationService.GetPlayerLocalizer(player);
         var menuConfig = _config.CurrentValue.Menu;
 
         var builder = _core.MenusAPI
             .CreateBuilder()
             .SetPlayerFrozen(menuConfig.FreezePlayer)
-            .Design.SetMenuTitle(localizer["menu.main.title"])
+            .Design.SetMenuTitle("玩家模型选择")
             .Design.SetMaxVisibleItems(menuConfig.ItemsPerPage);
 
         if (menuConfig.EnableSound) builder.EnableSound();
         if (menuConfig.AutoCloseDelay > 0) builder.SetAutoCloseDelay(menuConfig.AutoCloseDelay);
 
-        // CT Models
-        var ctButton = new ButtonMenuOption(localizer["menu.option.ct_models"]);
+        // 通用模型
+        var allButton = new ButtonMenuOption("通用模型");
+        allButton.Click += async (sender, args) => OpenModelCategoryMenu(args.Player!, "All");
+        builder.AddOption(allButton);
+
+        // CT模型
+        var ctButton = new ButtonMenuOption("CT模型");
         ctButton.Click += async (sender, args) => OpenModelCategoryMenu(args.Player!, "CT");
         builder.AddOption(ctButton);
 
-        // T Models  
-        var tButton = new ButtonMenuOption(localizer["menu.option.t_models"]);
+        // T模型  
+        var tButton = new ButtonMenuOption("T模型");
         tButton.Click += async (sender, args) => OpenModelCategoryMenu(args.Player!, "T");
         builder.AddOption(tButton);
 
-        // My Models
-        var myModelsButton = new ButtonMenuOption(localizer["menu.option.owned_models"]);
+        // 我的模型
+        var myModelsButton = new ButtonMenuOption("我的模型");
         myModelsButton.Click += async (sender, args) => await OpenOwnedModelsMenuAsync(args.Player!);
         builder.AddOption(myModelsButton);
 
@@ -75,13 +79,19 @@ public class MenuService : IMenuService
 
     private void OpenModelCategoryMenu(IPlayer player, string team, IMenuAPI? parentMenu = null)
     {
-        var localizer = _translationService.GetPlayerLocalizer(player);
         var menuConfig = _config.CurrentValue.Menu;
-        var titleKey = team == "CT" ? "menu.ct_models.title" : "menu.t_models.title";
+        
+        var title = team.ToLower() switch
+        {
+            "ct" => "CT模型",
+            "t" => "T模型",
+            "all" => "通用模型",
+            _ => "模型列表"
+        };
         
         var builder = _core.MenusAPI
             .CreateBuilder()
-            .Design.SetMenuTitle(localizer[titleKey])
+            .Design.SetMenuTitle(title)
             .Design.SetMaxVisibleItems(menuConfig.ItemsPerPage);
 
         if (parentMenu != null) builder.BindToParent(parentMenu);
@@ -90,11 +100,16 @@ public class MenuService : IMenuService
         var models = _modelService.GetAvailableModelsForPlayer(player, team);
         foreach (var model in models)
         {
-            var displayName = model.Price > 0 ? $"{model.DisplayName} ({model.Price} credits)" : model.DisplayName;
-            var button = new ButtonMenuOption(displayName);
+            var button = new ButtonMenuOption(model.DisplayName);
             var capturedId = model.ModelId;
             button.Click += async (sender, args) => await OpenModelDetailMenuAsync(args.Player!, capturedId);
             builder.AddOption(button);
+            
+            // 添加描述作为不可选中的灰色文本
+            if (!string.IsNullOrEmpty(model.Description))
+            {
+                builder.AddOption(new TextMenuOption(model.Description));
+            }
         }
 
         _core.MenusAPI.OpenMenuForPlayer(player, builder.Build());
@@ -102,12 +117,11 @@ public class MenuService : IMenuService
 
     private async Task OpenOwnedModelsMenuAsync(IPlayer player, IMenuAPI? parentMenu = null)
     {
-        var localizer = _translationService.GetPlayerLocalizer(player);
         var menuConfig = _config.CurrentValue.Menu;
 
         var builder = _core.MenusAPI
             .CreateBuilder()
-            .Design.SetMenuTitle(localizer["menu.owned_models.title"])
+            .Design.SetMenuTitle("我的模型")
             .Design.SetMaxVisibleItems(menuConfig.ItemsPerPage);
 
         if (parentMenu != null) builder.BindToParent(parentMenu);
@@ -128,7 +142,7 @@ public class MenuService : IMenuService
 
                 var button = new ButtonMenuOption($"✓ {model.DisplayName}");
                 var capturedId = modelId;
-                button.Click += async (sender, args) => await OpenModelDetailMenuAsync(args.Player!, capturedId, parentMenu);
+                button.Click += async (sender, args) => await OpenModelDetailMenuAsync(args.Player!, capturedId);
                 builder.AddOption(button);
             }
         }
@@ -138,7 +152,6 @@ public class MenuService : IMenuService
 
     private async Task OpenModelDetailMenuAsync(IPlayer player, string modelId, IMenuAPI? parentMenu = null)
     {
-        var localizer = _translationService.GetPlayerLocalizer(player);
         var menuConfig = _config.CurrentValue.Menu;
         var model = _modelService.GetModelById(modelId);
         if (model == null) return;
@@ -162,10 +175,6 @@ public class MenuService : IMenuService
         if (owns)
         {
             builder.AddOption(new TextMenuOption(isEquipped ? "✅ 已装备" : "✓ 已拥有"));
-        }
-        else
-        {
-            builder.AddOption(new TextMenuOption($"价格: {model.Price} credits"));
         }
 
         // 预览按钮
@@ -215,7 +224,27 @@ public class MenuService : IMenuService
 
     private async Task UnequipModelAsync(IPlayer player, string team)
     {
-        await _databaseService.SetPlayerCurrentModelAsync(player.SteamID, "", "");
-        _logger.LogInformation($"玩家 {player.Controller.PlayerName} 卸载模型");
+        // 根据阵营获取默认模型路径
+        var defaultModelPath = team.ToLower() == "ct" 
+            ? _config.CurrentValue.DefaultCTModelPath 
+            : _config.CurrentValue.DefaultTModelPath;
+
+        // 设置为默认模型
+        await _databaseService.SetPlayerCurrentModelAsync(player.SteamID, defaultModelPath, "");
+        
+        // 应用默认模型到玩家
+        if (player.Pawn?.IsValid == true)
+        {
+            var pawn = player.Pawn;
+            _core.Scheduler.DelayBySeconds(0.01f, () =>
+            {
+                if (pawn?.IsValid == true)
+                {
+                    pawn.SetModel(defaultModelPath);
+                }
+            });
+        }
+        
+        _logger.LogInformation($"玩家 {player.Controller.PlayerName} 卸载模型，恢复{team}默认模型");
     }
 }

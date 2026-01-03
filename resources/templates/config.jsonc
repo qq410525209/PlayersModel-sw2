@@ -17,11 +17,11 @@
     // Economy 钱包类型economy&credits (用于购买模型)
     "WalletKind": "credits",
     
-    // 默认 CT 模型 ID (玩家第一次进入服务器时使用)
-    "DefaultCTModel": "default_ct",
+    // 默认 CT 模型路径 (卸载模型时恢复)
+    "DefaultCTModelPath": "characters/models/ctm_sas/ctm_sas.vmdl",
     
-    // 默认 T 模型 ID
-    "DefaultTModel": "default_t",
+    // 默认 T 模型路径 (卸载模型时恢复)
+    "DefaultTModelPath": "characters/models/tm_phoenix/tm_phoenix.vmdl",
     
     // 权限设置
     "Permissions": {

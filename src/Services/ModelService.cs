@@ -136,7 +136,7 @@ public class ModelService : IModelService
         return allModels.Where(model =>
         {
             // 检查阵营筛选
-            if (team != null && model.Team.ToUpper() != "BOTH" && model.Team.ToUpper() != team.ToUpper())
+            if (team != null && model.Team.ToLower() != "all" && model.Team.ToLower() != team.ToLower())
                 return false;
 
             // 检查 Steam ID 限制
@@ -223,15 +223,17 @@ public class ModelService : IModelService
             // 使用 SetModelAsync 设置玩家模型
             if (player.Pawn?.IsValid == true)
             {
-                // 设置主模型
-                player.Pawn.AcceptInput("SetModel", model.ModelPath, null, null, 0);
-                
-                // 如果配置了手臂模型，也设置手臂
-                if (!string.IsNullOrEmpty(model.ArmsPath))
+                // 在主线程设置主模型
+                var pawn = player.Pawn;
+                var modelPath = model.ModelPath;
+                _core.Scheduler.DelayBySeconds(0.01f, () =>
                 {
-                    // TODO: 设置手臂模型需要不同的API
-                    // 可能需要使用CCSPlayerPawn的特定属性
+                    if (pawn?.IsValid == true)
+                    {
+                        pawn.SetModel(modelPath);
+                    }
                 }
+);
             }
 
             // 保存玩家当前使用的模型
