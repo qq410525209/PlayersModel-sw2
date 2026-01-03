@@ -37,6 +37,7 @@ artifacts/
 
 ## Documentation (不上传)
 SwiftlyS2.docs/
+examples/
 
 ## User-specific files
 *.rsuser
