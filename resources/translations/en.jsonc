@@ -1,0 +1,63 @@
+{
+  // PlayersModel Plugin English Translation
+  
+  // General Messages
+  "plugin.loaded": "PlayersModel plugin loaded",
+  "plugin.unloaded": "PlayersModel plugin unloaded",
+  
+  // Menu Titles
+  "menu.main.title": "🎭 Player Model Selection",
+  "menu.ct_models.title": "Counter-Terrorist (CT) Models",
+  "menu.t_models.title": "Terrorist (T) Models",
+  "menu.owned_models.title": "My Models",
+  "menu.vip_models.title": "⭐ VIP Exclusive Models",
+  
+  // Menu Options
+  "menu.option.ct_models": "CT Models",
+  "menu.option.t_models": "T Models",
+  "menu.option.owned_models": "My Models",
+  "menu.option.vip_models": "VIP Models",
+  "menu.option.buy_model": "Buy ({0} credits)",
+  "menu.option.equip_model": "Equip",
+  "menu.option.equipped": "✓ Equipped",
+  "menu.option.owned": "✓ Owned",
+  "menu.option.locked": "🔒 Not Owned",
+  
+  // Command Messages
+  "command.model.usage": "Usage: !model - Open model selection menu",
+  "command.buymodel.usage": "Usage: !buymodel <modelID> - Purchase specified model",
+  "command.balance.format": "💰 Your balance: {0} credits",
+  
+  // Purchase System
+  "purchase.success": "✓ Successfully purchased {0}! Remaining: {1} credits",
+  "purchase.already_owned": "✗ You already own this model",
+  "purchase.insufficient_funds": "✗ Insufficient funds! Need: {0} credits, Current: {1} credits",
+  "purchase.system_disabled": "✗ Model purchase system is disabled",
+  "purchase.economy_unavailable": "✗ Economy system not loaded",
+  "purchase.model_not_found": "✗ Model not found",
+  "purchase.no_permission": "✗ You don't have permission to purchase this model",
+  "purchase.free_model": "✓ Successfully obtained free model: {0}",
+  
+  // Model Application
+  "model.applied": "✓ Model changed: {0}",
+  "model.apply_failed": "✗ Failed to apply model",
+  "model.not_owned": "✗ You don't own this model",
+  "model.no_permission": "✗ You don't have permission to use this model",
+  "model.vip_only": "✗ This model is VIP only",
+  
+  // Permission Messages
+  "permission.required": "✗ Required permission: {0}",
+  "permission.vip_required": "✗ VIP permission required",
+  "permission.admin_required": "✗ Admin permission required",
+  
+  // System Messages
+  "system.economy_connected": "✓ Successfully connected to Economy system",
+  "system.economy_not_found": "⚠ Economy plugin not found",
+  "system.database_initialized": "✓ Database initialized",
+  "system.models_loaded": "✓ Loaded {0} models",
+  
+  // Error Messages
+  "error.generic": "✗ An error occurred, please contact an administrator",
+  "error.invalid_player": "✗ Invalid player",
+  "error.command_failed": "✗ Command execution failed"
+}
