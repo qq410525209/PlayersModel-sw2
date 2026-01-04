@@ -196,8 +196,18 @@ public class MenuService : IMenuService
         if (menuConfig.EnableSound) builder.EnableSound();
 
         // 模型信息
-        builder.AddOption(new TextMenuOption(model.Description));
-        builder.AddOption(new TextMenuOption($"{_translation["model.team"]}: {model.Team}"));
+        builder.AddOption(new TextMenuOption(model.Description)
+        {
+            Enabled = false,
+            PlaySound = false
+        }
+        );
+        builder.AddOption(new TextMenuOption($"{_translation["model.team"]}: {model.Team}")
+        {
+            Enabled = false,
+            PlaySound = false
+        }
+        );
         
         var owns = await _databaseService.PlayerOwnsModelAsync(player.SteamID, modelId);
         
@@ -264,39 +274,56 @@ public class MenuService : IMenuService
 
     private async Task UnequipModelAsync(IPlayer player, string team)
     {
-        // 根据模型类型卸载对应槽位
-        // All类型：只清除All槽位
-        // CT类型：只清除CT槽位
-        // T类型：只清除T槽位
-        var defaultModelPath = team.Equals("CT", StringComparison.OrdinalIgnoreCase)
-            ? _config.CurrentValue.DefaultCTModelPath 
-            : _config.CurrentValue.DefaultTModelPath;
-        
-        await _databaseService.SetPlayerCurrentModelAsync(
-            player.SteamID,
-            player.Controller.PlayerName,
-            "",
-            defaultModelPath,
-            "",
-            team);
+        // 删除数据库中对应槽位的记录
+        // 不保存默认模型到数据库，默认模型只在查询不到记录时使用
+        await _databaseService.DeletePlayerCurrentModelAsync(player.SteamID, team);
         
         _logger.LogInformation(_translation.GetConsole("menuservice.player_unequipped", player.Controller.PlayerName, team));
         
-        // 应用默认模型到玩家（如果玩家当前存在）
+        // 如果玩家在线，需要重新应用模型（按优先级）
         if (player.Pawn?.IsValid == true)
         {
             var currentTeam = player.Controller.TeamNum;
-            var defaultPath = currentTeam == 3 
-                ? _config.CurrentValue.DefaultCTModelPath 
-                : _config.CurrentValue.DefaultTModelPath;
-            var pawn = player.Pawn;
-            _core.Scheduler.DelayBySeconds(0.01f, () =>
+            var teamName = currentTeam == 2 ? "T" : currentTeam == 3 ? "CT" : "";
+            
+            if (!string.IsNullOrEmpty(teamName))
             {
-                if (pawn?.IsValid == true)
+                string modelPathToApply = "";
+                
+                // 卸载后按优先级查找模型：
+                // 1. 如果卸载的是All，检查当前阵营槽位是否有模型
+                // 2. 如果卸载的是CT/T，不需要检查（因为已经删除了）
+                // 3. 如果都没有，使用默认模型
+                
+                if (team.Equals("All", StringComparison.OrdinalIgnoreCase))
                 {
-                    pawn.SetModel(defaultPath);
+                    // 卸载All后，检查当前阵营槽位
+                    var teamModelData = await _databaseService.GetPlayerCurrentModelAsync(player.SteamID, teamName);
+                    if (!string.IsNullOrEmpty(teamModelData.modelPath))
+                    {
+                        modelPathToApply = teamModelData.modelPath;
+                    }
                 }
-            });
+                
+                // 如果没有找到模型，使用默认模型
+                if (string.IsNullOrEmpty(modelPathToApply))
+                {
+                    modelPathToApply = teamName == "CT" 
+                        ? _config.CurrentValue.DefaultCTModelPath 
+                        : _config.CurrentValue.DefaultTModelPath;
+                }
+                
+                // 应用模型
+                var pawn = player.Pawn;
+                var pathToApply = modelPathToApply;
+                _core.Scheduler.DelayBySeconds(0.01f, () =>
+                {
+                    if (pawn?.IsValid == true)
+                    {
+                        pawn.SetModel(pathToApply);
+                    }
+                });
+            }
         }
     }
 }

@@ -43,6 +43,11 @@ public interface IDatabaseService
     Task SetPlayerCurrentModelAsync(ulong steamId, string playerName, string modelId, string modelPath, string armsPath, string team);
 
     /// <summary>
+    /// 删除玩家指定阵营的当前模型
+    /// </summary>
+    Task DeletePlayerCurrentModelAsync(ulong steamId, string team);
+
+    /// <summary>
     /// 删除玩家的所有数据
     /// </summary>
     Task DeletePlayerDataAsync(ulong steamId);
@@ -284,8 +289,7 @@ public class DatabaseService : IDatabaseService
             using var connection = GetConnection();
             var sql = $@"
                 SELECT model_path, arms_path FROM {CurrentModelsTable}
-                WHERE steam_id = @SteamId
- AND team = @Team
+                WHERE steam_id = @SteamId AND team = @Team
             ";
 
             var result = await connection.QueryFirstOrDefaultAsync<dynamic>(sql, new { SteamId = steamId, Team = team });
@@ -356,6 +360,30 @@ public class DatabaseService : IDatabaseService
         catch (Exception ex)
         {
             _logger.LogError(ex, _translation.GetConsole("database.set_model_failed", steamId));
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// 删除玩家指定阵营的当前模型
+    /// </summary>
+    public async Task DeletePlayerCurrentModelAsync(ulong steamId, string team)
+    {
+        try
+        {
+            using var connection = GetConnection();
+            var sql = $@"
+                DELETE FROM {CurrentModelsTable}
+                WHERE steam_id = @SteamId AND team = @Team
+            ";
+
+            await connection.ExecuteAsync(sql, new { SteamId = steamId, Team = team });
+            
+            _logger.LogDebug(_translation.GetConsole("database.delete_model_debug", steamId, team));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, _translation.GetConsole("database.delete_model_failed", steamId, team));
             throw;
         }
     }
