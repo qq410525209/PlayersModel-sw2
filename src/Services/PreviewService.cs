@@ -80,10 +80,27 @@ public class PreviewService : IPreviewService
             // 生成后立即设置模型
             entity.SetModel(modelPath);
 
-            // 设置传输状态：先全局禁用，然后只对预览者启用
-            entity.SetTransmitState(false);  // 全局禁用传输
+            // 设置传输状态：先允许个人传输，然后禁用有效玩家的传输
+            
             var playerId = player.Slot;  // 获取预览者的Slot（玩家ID）
             entity.SetTransmitState(true, playerId);  // 只对预览者启用传输
+
+            //禁用目前所有在线有效的玩家传输
+            foreach (var playera in _core.PlayerManager.GetAlive())
+            {
+                if (playera == null || !playera.IsValid) continue;
+
+                if (playera.Controller == null || !playera.Controller.IsValid) continue;
+
+                if (playera.Controller.PlayerPawn.Value == null || !playera.Controller.PlayerPawn.IsValid) continue;
+
+                if(iplayer.SteamID == playera.SteamID) continue;
+
+                entity.SetTransmitState(false, playera.PlayerID);
+
+
+            }
+            
 
             
             // 设置辉光效果（轮廓）
@@ -104,7 +121,7 @@ public class PreviewService : IPreviewService
                 {
                     try
                     {
-                        previewEntity.AcceptInput("Kill", "", null, null, 0);
+                        previewEntity.AcceptInput("Kill", 0);
                         _playerPreviewEntities.Remove(player.SteamID);
                         _logger.LogInformation(_translation.GetConsole("preview.entity_removed", entityIndex));
                     }
