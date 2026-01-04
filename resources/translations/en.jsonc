@@ -1,63 +1,157 @@
 {
   // PlayersModel Plugin English Translation
   
-  // General Messages
-  "plugin.loaded": "PlayersModel plugin loaded",
-  "plugin.unloaded": "PlayersModel plugin unloaded",
+  // ========== General Messages ==========
+  "plugin.loaded": "Plugin loaded successfully!",
+  "plugin.unloaded": "Plugin unloaded",
+  "plugin.loading": "Loading plugin...",
   
-  // Menu Titles
+  // ========== System Initialization Messages ==========
+  "system.config_initialized": "✓ Configuration initialized",
+  "system.di_initialized": "✓ Dependency injection initialized",
+  "system.economy_connected": "✓ Successfully connected to Economy system!",
+  "system.economy_not_found": "⚠ Warning: Economy plugin not found, purchase features will be unavailable!",
+  "system.economy_warning": "⚠ Warning: Economy API is null, purchase features unavailable",
+  "system.economy_delayed_init": "Delayed initialization of Economy system...",
+  "system.economy_delayed_success": "✓ Successfully connected to Economy system (delayed)!",
+  "system.economy_api_passed": "✓ Economy API successfully passed to ModelService",
+  "system.economy_wallet_initialized": "✓ Wallet type initialized: {0}",
+  "system.database_initialized": "✓ Database initialized",
+  "system.models_loaded": "✓ Loaded {0} models",
+  "system.models_loading": "Loaded {0} model configurations",
+  "system.events_registered": "✓ Event listeners registered",
+  "system.commands_registered": "✓ Command system registered",
+  "system.modelservice_warning": "⚠ Warning: ModelService is null",
+  "system.service_not_loaded": "Error: Service not loaded",
+  
+  // ========== Database Messages ==========
+  "database.auto_create_disabled": "Database table auto-creation disabled",
+  "database.table_initialized": "Database table {0} initialized successfully",
+  "database.init_failed": "Failed to initialize database tables",
+  "database.check_owns_failed": "Failed to check if player {0} owns model {1}",
+  "database.add_model_failed": "Failed to add model {1} for player {0}",
+  "database.add_model_debug": "Added model {1} for player {0}",
+  "database.get_models_failed": "Failed to get model list for player {0}",
+  "database.get_current_failed": "Failed to get current model for player {0}",
+  "database.set_model_debug": "Set model for player {0}: {1}",
+  "database.set_model_failed": "Failed to set model for player {0}",
+  "database.delete_data": "Deleted all data for player {0}",
+  "database.delete_failed": "Failed to delete data for player {0}",
+  
+  // ========== Model Service Messages ==========
+  "modelservice.model_not_found": "Model {0} not found",
+  "modelservice.no_permission": "Player {0} doesn't have permission to use model {1}",
+  "modelservice.not_owned": "Player {0} doesn't own model {1}",
+  "modelservice.applied": "Player {0} applied model {1}",
+  "modelservice.apply_failed": "Failed to apply model: {0}",
+  "modelservice.purchase_called": "PurchaseModelAsync called - Player: {0}, ModelID: {1}",
+  "modelservice.economy_status": "_economyAPI status: {0}",
+  "modelservice.purchase_disabled": "Purchase system disabled",
+  "modelservice.purchased": "Player {0} purchased model {1}, spent {2} {3}",
+  "modelservice.purchase_failed": "Failed to purchase model: {0}",
+  
+  // ========== Event Messages ==========
+  "events.precache_model": "Precaching model: {0}",
+  "events.precache_arms": "Precaching arms model: {0}",
+  "events.player_join_applied": "Applied model on join: {0}",
+  "events.player_join_failed": "Failed to apply model on join: {0}",
+  "events.player_spawn_applied": "Applied model on spawn: {0}",
+  "events.player_spawn_failed": "Failed to apply model on spawn: {0}",
+  "events.round_start": "Round started, applying saved models to all players",
+  "events.round_start_applied": "Applied model on round start: {0}",
+  "events.round_start_failed": "Failed to apply model on round start: {0}",
+  
+  // ========== Menu Service Messages ==========
+  "menuservice.player_equipped": "Player {0} equipped model: {1}",
+  "menuservice.player_unequipped": "Player {0} unequipped model, restored {1} default model",
+  
+  // ========== Preview Service Messages ==========
+  "preview.showing": "Player {0} previewing model: {1}",
+  "preview.error": "Error previewing model: {0}",
+  
+  // ========== Command Messages ==========
+  "command.player_only": "This command can only be used by players!",
+  "command.model.usage": "Usage: !model - Open model selection menu",
+  "command.buymodel.usage": "Usage: !buymodel <modelID>",
+  "command.balance.format": "Balance: {0} {1}",
+  "command.mymodels.viewing": "Viewing your models...",
+  "command.menu_not_loaded": "Menu service not loaded!",
+  
+  // ========== Admin Command Messages ==========
+  "admin.permission_required": "Admin permission required",
+  "admin.givecredits.usage": "Usage: !pm_givecredits <player> <amount>",
+  "admin.givecredits.invalid_amount": "Invalid amount!",
+  "admin.givecredits.player_not_found": "Player not found: {0}",
+  "admin.givecredits.economy_not_loaded": "Economy system not loaded!",
+  "admin.givecredits.success": "✓ Gave {0} {1} {2}, new balance: {3}",
+  "admin.givemodel.usage": "Usage: !pm_givemodel <player> <modelID>",
+  "admin.givemodel.player_not_found": "Player not found: {0}",
+  "admin.givemodel.model_not_found": "✗ Model not found: {0}",
+  "admin.givemodel.success": "✓ Gave {0} model: {1}",
+  "admin.setmodel.usage": "Usage: !pm_setmodel <player> <modelID>",
+  "admin.setmodel.player_not_found": "Player not found: {0}",
+  "admin.setmodel.success": "✓ Set model for {0}: {1}",
+  "admin.setmodel.failed": "✗ Failed to set model",
+  "admin.reload.success": "✓ Configuration reloaded",
+  "admin.reload.failed": "✗ Failed to reload configuration: {0}",
+  "admin.listmodels.usage": "Usage: !pm_listmodels <player>",
+  "admin.listmodels.player_not_found": "Player not found: {0}",
+  "admin.listmodels.no_models": "{0} doesn't have any models",
+  "admin.listmodels.title": "=== {0}'s Models ({1}) ===",
+  "admin.listmodels.item": "- {0} ({1})",
+  
+  // ========== Menu Titles ==========
   "menu.main.title": "🎭 Player Model Selection",
   "menu.ct_models.title": "Counter-Terrorist (CT) Models",
   "menu.t_models.title": "Terrorist (T) Models",
   "menu.owned_models.title": "My Models",
   "menu.vip_models.title": "⭐ VIP Exclusive Models",
+  "menu.all_models.title": "All Models",
   
-  // Menu Options
+  // ========== Menu Options ==========
   "menu.option.ct_models": "CT Models",
   "menu.option.t_models": "T Models",
+  "menu.option.all_models": "All Models",
   "menu.option.owned_models": "My Models",
   "menu.option.vip_models": "VIP Models",
-  "menu.option.buy_model": "Buy ({0} credits)",
-  "menu.option.equip_model": "Equip",
-  "menu.option.equipped": "✓ Equipped",
+  "menu.option.buy_model": "💰 Buy ({0} credits)",
+  "menu.option.equip_model": "✅ Equip Model",
+  "menu.option.unequip_model": "❌ Unequip Model",
+  "menu.option.equipped": "✅ Equipped",
   "menu.option.owned": "✓ Owned",
   "menu.option.locked": "🔒 Not Owned",
+  "menu.option.no_models": "You don't have any models",
+  "menu.option.preview": "🔍 Preview Model",
   
-  // Command Messages
-  "command.model.usage": "Usage: !model - Open model selection menu",
-  "command.buymodel.usage": "Usage: !buymodel <modelID> - Purchase specified model",
-  "command.balance.format": "💰 Your balance: {0} credits",
+  // ========== Purchase System ==========
+  "purchase.success": "Successfully purchased {0}! Remaining: {1} {2}",
+  "purchase.already_owned": "You already own this model",
+  "purchase.insufficient_funds": "Insufficient funds! Need: {0} {1}, Current: {2} {3}",
+  "purchase.system_disabled": "Model purchase system is disabled",
+  "purchase.economy_unavailable": "Economy system not loaded",
+  "purchase.model_not_found": "Model not found",
+  "purchase.no_permission": "You don't have permission to use this model",
+  "purchase.free_model": "Successfully obtained free model: {0}",
+  "purchase.failed": "Purchase failed, please contact an administrator",
   
-  // Purchase System
-  "purchase.success": "✓ Successfully purchased {0}! Remaining: {1} credits",
-  "purchase.already_owned": "✗ You already own this model",
-  "purchase.insufficient_funds": "✗ Insufficient funds! Need: {0} credits, Current: {1} credits",
-  "purchase.system_disabled": "✗ Model purchase system is disabled",
-  "purchase.economy_unavailable": "✗ Economy system not loaded",
-  "purchase.model_not_found": "✗ Model not found",
-  "purchase.no_permission": "✗ You don't have permission to purchase this model",
-  "purchase.free_model": "✓ Successfully obtained free model: {0}",
-  
-  // Model Application
+  // ========== Model Application ==========
   "model.applied": "✓ Model changed: {0}",
   "model.apply_failed": "✗ Failed to apply model",
-  "model.not_owned": "✗ You don't own this model",
-  "model.no_permission": "✗ You don't have permission to use this model",
-  "model.vip_only": "✗ This model is VIP only",
+  "model.not_owned": "You don't own this model",
+  "model.no_permission": "You don't have permission to use this model",
+  "model.vip_only": "This model is VIP only",
+  "model.not_found": "Model {0} not found",
+  "model.unequipped": "Player {0} unequipped model, restored {1} default model",
   
-  // Permission Messages
-  "permission.required": "✗ Required permission: {0}",
-  "permission.vip_required": "✗ VIP permission required",
-  "permission.admin_required": "✗ Admin permission required",
+  // ========== Permission Messages ==========
+  "permission.required": "Required permission: {0}",
+  "permission.vip_required": "VIP permission required",
+  "permission.admin_required": "Admin permission required",
   
-  // System Messages
-  "system.economy_connected": "✓ Successfully connected to Economy system",
-  "system.economy_not_found": "⚠ Economy plugin not found",
-  "system.database_initialized": "✓ Database initialized",
-  "system.models_loaded": "✓ Loaded {0} models",
-  
-  // Error Messages
-  "error.generic": "✗ An error occurred, please contact an administrator",
-  "error.invalid_player": "✗ Invalid player",
-  "error.command_failed": "✗ Command execution failed"
+  // ========== Error Messages ==========
+  "error.generic": "An error occurred, please contact an administrator",
+  "error.invalid_player": "Invalid player",
+  "error.command_failed": "Command execution failed",
+  "error.load_failed": "✗ Plugin load failed: {0}",
+  "error.stack_trace": "Stack trace: {0}"
 }

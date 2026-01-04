@@ -35,7 +35,7 @@ public partial class PlayersModel
         Core.Command.RegisterCommand(commands.Admin.ReloadConfig, Command_Admin_ReloadConfig);
         Core.Command.RegisterCommand(commands.Admin.ListPlayerModels, Command_Admin_ListPlayerModels);
 
-        Console.WriteLine("[PlayersModel] ✓ 命令系统已注册");
+        Console.WriteLine($"{PluginPrefix} {_translationService?.GetConsole("system.commands_registered") ?? "Command system registered"}");
     }
 
     #region 玩家命令
@@ -47,7 +47,7 @@ public partial class PlayersModel
     {
         if (!context.IsSentByPlayer)
         {
-            context.Reply("[PlayersModel] 此命令只能由玩家使用!");
+            context.Reply($"{PluginPrefix} {_translationService?.GetConsole("command.player_only") ?? "This command can only be used by players!"}");
             return;
         }
 
@@ -61,7 +61,7 @@ public partial class PlayersModel
         }
         else
         {
-            context.Reply("[PlayersModel] 菜单服务未加载!");
+            context.Reply($"{PluginPrefix} {_translationService?.Get("command.menu_not_loaded", player) ?? "Menu service not loaded!"}");
         }
     }
 
@@ -72,16 +72,15 @@ public partial class PlayersModel
     {
         if (!context.IsSentByPlayer)
         {
-            context.Reply("[PlayersModel] 此命令只能由玩家使用!");
+            context.Reply($"{PluginPrefix} {_translationService?.GetConsole("command.player_only") ?? "This command can only be used by players!"}");
             return;
         }
 
         var player = context.Sender!;
-        var translation = _serviceProvider?.GetService<ITranslationService>();
 
         if (context.Args.Length < 1)
         {
-            var usage = "[PlayersModel] " + (translation?.Get("command.buymodel.usage", player) ?? "用法: !buymodel <模型ID>");
+            var usage = $"{PluginPrefix} {_translationService?.Get("command.buymodel.usage", player) ?? "Usage: !buymodel <modelID>"}";
             context.Reply(usage);
             return;
         }
@@ -94,7 +93,6 @@ public partial class PlayersModel
             if (_modelService != null)
             {
                 var result = await _modelService.PurchaseModelAsync(player, modelId);
-                // TODO: 需要使用正确的 PrintToChat API
                 context.Reply(result.message);
             }
         });
@@ -107,24 +105,23 @@ public partial class PlayersModel
     {
         if (!context.IsSentByPlayer)
         {
-            context.Reply("[PlayersModel] 此命令只能由玩家使用!");
+            context.Reply($"{PluginPrefix} {_translationService?.GetConsole("command.player_only") ?? "This command can only be used by players!"}");
             return;
         }
 
         var player = context.Sender!;
-        var translation = _serviceProvider?.GetService<ITranslationService>();
         var config = _serviceProvider?.GetRequiredService<IOptionsMonitor<PluginConfig>>();
 
         if (_economyAPI == null)
         {
-            var message = "[PlayersModel] " + (translation?.Get("purchase.economy_unavailable", player) ?? "经济系统未加载");
+            var message = $"{PluginPrefix} {_translationService?.Get("purchase.economy_unavailable", player) ?? "Economy system not loaded"}";
             context.Reply(message);
             return;
         }
 
         var walletKind = config?.CurrentValue.WalletKind ?? "credits";
         var balance = _economyAPI.GetPlayerBalance(player, walletKind);
-        var balanceMsg = "[PlayersModel] " + (translation?.Get("command.balance.format", player, balance) ?? $"余额: {balance} {walletKind}");
+        var balanceMsg = $"{PluginPrefix} {_translationService?.Get("command.balance.format", player, balance, walletKind) ?? $"Balance: {balance} {walletKind}"}";
         context.Reply(balanceMsg);
     }
 
@@ -135,14 +132,12 @@ public partial class PlayersModel
     {
         if (!context.IsSentByPlayer)
         {
-            context.Reply("[PlayersModel] 此命令只能由玩家使用!");
+            context.Reply($"{PluginPrefix} {_translationService?.GetConsole("command.player_only") ?? "This command can only be used by players!"}");
             return;
         }
 
         var player = context.Sender!;
-
-        // TODO: 打开"我的模型"菜单或列表
-        context.Reply("[PlayersModel] 正在查看你的模型...");
+        context.Reply($"{PluginPrefix} {_translationService?.Get("command.mymodels.viewing", player) ?? "Viewing your models..."}");
     }
 
     #endregion
@@ -156,7 +151,7 @@ public partial class PlayersModel
     {
         if (!context.IsSentByPlayer)
         {
-            context.Reply("[PlayersModel] 此命令只能由玩家使用!");
+            context.Reply($"{PluginPrefix} {_translationService?.GetConsole("command.player_only") ?? "This command can only be used by players!"}");
             return;
         }
 
@@ -165,22 +160,21 @@ public partial class PlayersModel
         // 检查管理员权限
         if (!IsPlayerAdmin(player.SteamID))
         {
-            var translation = _serviceProvider?.GetService<ITranslationService>();
-            var message = "[PlayersModel] " + (translation?.Get("permission.admin_required", player) ?? "需要管理员权限");
+            var message = $"{PluginPrefix} {_translationService?.Get("admin.permission_required", player) ?? "Admin permission required"}";
             context.Reply(message);
             return;
         }
 
         if (context.Args.Length < 2)
         {
-            context.Reply("[PlayersModel] 用法: !pm_givecredits <玩家名> <数量>");
+            context.Reply($"{PluginPrefix} {_translationService?.GetConsole("admin.givecredits.usage") ?? "Usage: !pm_givecredits <player> <amount>"}");
             return;
         }
 
         var targetName = context.Args[0];
         if (!int.TryParse(context.Args[1], out int amount))
         {
-            context.Reply("[PlayersModel] 无效的数量!");
+            context.Reply($"{PluginPrefix} {_translationService?.GetConsole("admin.givecredits.invalid_amount") ?? "Invalid amount!"}");
             return;
         }
 
@@ -188,13 +182,13 @@ public partial class PlayersModel
         var targetPlayer = FindPlayerByName(targetName);
         if (targetPlayer == null)
         {
-            context.Reply($"[PlayersModel] 未找到玩家: {targetName}");
+            context.Reply($"{PluginPrefix} {_translationService?.GetConsole("admin.givecredits.player_not_found", targetName) ?? $"Player not found: {targetName}"}");
             return;
         }
 
         if (_economyAPI == null)
         {
-            context.Reply("[PlayersModel] 经济系统未加载!");
+            context.Reply($"{PluginPrefix} {_translationService?.GetConsole("admin.givecredits.economy_not_loaded") ?? "Economy system not loaded!"}");
             return;
         }
 
@@ -204,9 +198,7 @@ public partial class PlayersModel
         _economyAPI.AddPlayerBalance(targetPlayer, walletKind, amount);
         var newBalance = _economyAPI.GetPlayerBalance(targetPlayer, walletKind);
 
-        context.Reply($"[PlayersModel] ✓ 已给予 {targetPlayer.Controller.PlayerName} {amount} {walletKind}, 新余额: {newBalance}");
-        // TODO: 使用正确的 PrintToChat API
-        // targetPlayer.PrintToChat($"✓ 你收到了 {amount} {walletKind}! 当前余额: {newBalance}");
+        context.Reply($"{PluginPrefix} {_translationService?.GetConsole("admin.givecredits.success", targetPlayer.Controller.PlayerName, amount, walletKind, newBalance) ?? $"Gave {targetPlayer.Controller.PlayerName} {amount} {walletKind}, new balance: {newBalance}"}");
     }
 
     /// <summary>
@@ -216,7 +208,7 @@ public partial class PlayersModel
     {
         if (!context.IsSentByPlayer)
         {
-            context.Reply("[PlayersModel] 此命令只能由玩家使用!");
+            context.Reply($"{PluginPrefix} {_translationService?.GetConsole("command.player_only") ?? "This command can only be used by players!"}");
             return;
         }
 
@@ -225,13 +217,13 @@ public partial class PlayersModel
         // 检查管理员权限
         if (!IsPlayerAdmin(player.SteamID))
         {
-            context.Reply("[PlayersModel] 需要管理员权限");
+            context.Reply($"{PluginPrefix} {_translationService?.Get("admin.permission_required", player) ?? "Admin permission required"}");
             return;
         }
 
         if (context.Args.Length < 2)
         {
-            context.Reply("[PlayersModel] 用法: !pm_givemodel <玩家名> <模型ID>");
+            context.Reply($"{PluginPrefix} {_translationService?.GetConsole("admin.givemodel.usage") ?? "Usage: !pm_givemodel <player> <modelID>"}");
             return;
         }
 
@@ -242,7 +234,7 @@ public partial class PlayersModel
         var targetPlayer = FindPlayerByName(targetName);
         if (targetPlayer == null)
         {
-            context.Reply($"[PlayersModel] 未找到玩家: {targetName}");
+            context.Reply($"{PluginPrefix} {_translationService?.GetConsole("admin.givemodel.player_not_found", targetName) ?? $"Player not found: {targetName}"}");
             return;
         }
 
@@ -254,16 +246,14 @@ public partial class PlayersModel
             var model = _modelService.GetModelById(modelId);
             if (model == null)
             {
-                context.Reply($"✗ 模型不存在: {modelId}");
+                context.Reply($"{_translationService?.GetConsole("admin.givemodel.model_not_found", modelId) ?? $"Model not found: {modelId}"}");
                 return;
             }
 
             // 直接添加到玩家拥有列表
             await _databaseService.AddOwnedModelAsync(targetPlayer.SteamID, modelId);
 
-            context.Reply($"✓ 已给予 {targetPlayer.Controller.PlayerName} 模型: {model.DisplayName}");
-            // TODO: 使用正确的 PrintToChat API
-            // targetPlayer.PrintToChat($"✓ 你获得了新模型: {model.DisplayName}");
+            context.Reply($"{_translationService?.GetConsole("admin.givemodel.success", targetPlayer.Controller.PlayerName, model.DisplayName) ?? $"Gave {targetPlayer.Controller.PlayerName} model: {model.DisplayName}"}");
         });
     }
 
@@ -274,7 +264,7 @@ public partial class PlayersModel
     {
         if (!context.IsSentByPlayer)
         {
-            context.Reply("[PlayersModel] 此命令只能由玩家使用!");
+            context.Reply($"{PluginPrefix} {_translationService?.GetConsole("command.player_only") ?? "This command can only be used by players!"}");
             return;
         }
 
@@ -283,13 +273,13 @@ public partial class PlayersModel
         // 检查管理员权限
         if (!IsPlayerAdmin(player.SteamID))
         {
-            context.Reply("[PlayersModel] 需要管理员权限");
+            context.Reply($"{PluginPrefix} {_translationService?.Get("admin.permission_required", player) ?? "Admin permission required"}");
             return;
         }
 
         if (context.Args.Length < 2)
         {
-            context.Reply("[PlayersModel] 用法: !pm_setmodel <玩家名> <模型ID>");
+            context.Reply($"{PluginPrefix} {_translationService?.GetConsole("admin.setmodel.usage") ?? "Usage: !pm_setmodel <player> <modelID>"}");
             return;
         }
 
@@ -300,7 +290,7 @@ public partial class PlayersModel
         var targetPlayer = FindPlayerByName(targetName);
         if (targetPlayer == null)
         {
-            context.Reply($"[PlayersModel] 未找到玩家: {targetName}");
+            context.Reply($"{PluginPrefix} {_translationService?.GetConsole("admin.setmodel.player_not_found", targetName) ?? $"Player not found: {targetName}"}");
             return;
         }
 
@@ -313,13 +303,11 @@ public partial class PlayersModel
             if (success)
             {
                 var model = _modelService.GetModelById(modelId);
-                context.Reply($"✓ 已为 {targetPlayer.Controller.PlayerName} 设置模型: {model?.DisplayName}");
-                // TODO: 使用正确的 PrintToChat API
-                // targetPlayer.PrintToChat($"✓ 你的模型已被设置为: {model?.DisplayName}");
+                context.Reply($"{_translationService?.GetConsole("admin.setmodel.success", targetPlayer.Controller.PlayerName, model?.DisplayName ?? "Unknown") ?? $"Set model for {targetPlayer.Controller.PlayerName}: {model?.DisplayName ?? "Unknown"}"}");
             }
             else
             {
-                context.Reply($"✗ 设置模型失败");
+                context.Reply($"{_translationService?.GetConsole("admin.setmodel.failed") ?? "Failed to set model"}");
             }
         });
     }
@@ -331,7 +319,7 @@ public partial class PlayersModel
     {
         if (!context.IsSentByPlayer)
         {
-            context.Reply("[PlayersModel] 此命令只能由玩家使用!");
+            context.Reply($"{PluginPrefix} {_translationService?.GetConsole("command.player_only") ?? "This command can only be used by players!"}");
             return;
         }
 
@@ -340,7 +328,7 @@ public partial class PlayersModel
         // 检查管理员权限
         if (!IsPlayerAdmin(player.SteamID))
         {
-            context.Reply("[PlayersModel] 需要管理员权限");
+            context.Reply($"{PluginPrefix} {_translationService?.Get("admin.permission_required", player) ?? "Admin permission required"}");
             return;
         }
 
@@ -348,11 +336,11 @@ public partial class PlayersModel
         {
             // 重新加载模型配置
             _modelService?.LoadModels();
-            context.Reply("[PlayersModel] ✓ 配置已重新加载");
+            context.Reply($"{PluginPrefix} {_translationService?.GetConsole("admin.reload.success") ?? "Configuration reloaded"}");
         }
         catch (Exception ex)
         {
-            context.Reply($"[PlayersModel] ✗ 重新加载配置失败: {ex.Message}");
+            context.Reply($"{PluginPrefix} {_translationService?.GetConsole("admin.reload.failed", ex.Message ?? "") ?? $"Failed to reload configuration: {ex.Message}"}");
         }
     }
 
@@ -363,7 +351,7 @@ public partial class PlayersModel
     {
         if (!context.IsSentByPlayer)
         {
-            context.Reply("[PlayersModel] 此命令只能由玩家使用!");
+            context.Reply($"{PluginPrefix} {_translationService?.GetConsole("command.player_only") ?? "This command can only be used by players!"}");
             return;
         }
 
@@ -372,13 +360,13 @@ public partial class PlayersModel
         // 检查管理员权限
         if (!IsPlayerAdmin(player.SteamID))
         {
-            context.Reply("[PlayersModel] 需要管理员权限");
+            context.Reply($"{PluginPrefix} {_translationService?.Get("admin.permission_required", player) ?? "Admin permission required"}");
             return;
         }
 
         if (context.Args.Length < 1)
         {
-            context.Reply("[PlayersModel] 用法: !pm_listmodels <玩家名>");
+            context.Reply($"{PluginPrefix} {_translationService?.GetConsole("admin.listmodels.usage") ?? "Usage: !pm_listmodels <player>"}");
             return;
         }
 
@@ -388,7 +376,7 @@ public partial class PlayersModel
         var targetPlayer = FindPlayerByName(targetName);
         if (targetPlayer == null)
         {
-            context.Reply($"[PlayersModel] 未找到玩家: {targetName}");
+            context.Reply($"{PluginPrefix} {_translationService?.GetConsole("admin.listmodels.player_not_found", targetName) ?? $"Player not found: {targetName}"}");
             return;
         }
 
@@ -401,16 +389,16 @@ public partial class PlayersModel
             
             if (ownedModelIds.Count == 0)
             {
-                context.Reply($"{targetPlayer.Controller.PlayerName} 还没有任何模型");
+                context.Reply($"{_translationService?.GetConsole("admin.listmodels.no_models", targetPlayer.Controller.PlayerName) ?? $"{targetPlayer.Controller.PlayerName} doesn't have any models"}");
                 return;
             }
 
-            context.Reply($"=== {targetPlayer.Controller.PlayerName} 的模型 ({ownedModelIds.Count}) ===");
+            context.Reply($"{_translationService?.GetConsole("admin.listmodels.title", targetPlayer.Controller.PlayerName, ownedModelIds.Count) ?? $"=== {targetPlayer.Controller.PlayerName}'s Models ({ownedModelIds.Count}) ==="}");
             foreach (var modelId in ownedModelIds)
             {
                 var model = _modelService.GetModelById(modelId);
                 var displayName = model?.DisplayName ?? modelId;
-                context.Reply($"- {displayName} ({modelId})");
+                context.Reply($"{_translationService?.GetConsole("admin.listmodels.item", displayName, modelId) ?? $"- {displayName} ({modelId})"}");
             }
         });
     }

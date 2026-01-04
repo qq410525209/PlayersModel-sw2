@@ -24,6 +24,19 @@ namespace PlayersModel
         private IServiceProvider? _serviceProvider;
         private IDatabaseService? _databaseService;
         private IModelService? _modelService;
+        private ITranslationService? _translationService;
+
+        /// <summary>
+        /// 获取格式化的插件前缀 [PluginName]
+        /// </summary>
+        private string PluginPrefix
+        {
+            get
+            {
+                var metadata = (PluginMetadata?)Attribute.GetCustomAttribute(GetType(), typeof(PluginMetadata));
+                return $"[{metadata?.Name ?? "PlayersModel"}]";
+            }
+        }
 
         public PlayersModel(ISwiftlyCore core) : base(core)
         {
@@ -38,21 +51,21 @@ namespace PlayersModel
         {
             _interfaceManager = interfaceManager;
             
-            // 获取经济系统 API
+            // 注意：此时翻译服务还未初始化，使用硬编码消息
             if (interfaceManager.HasSharedInterface("Economy.API.v1"))
             {
                 _economyAPI = interfaceManager.GetSharedInterface<IEconomyAPIv1>("Economy.API.v1");
-                Console.WriteLine("[PlayersModel] ✓ 成功连接到经济系统!");
+                Console.WriteLine($"{PluginPrefix} ✓ Successfully connected to Economy system!");
             }
             else
             {
-                Console.WriteLine("[PlayersModel] ⚠ 警告: 未找到经济系统插件,购买模型功能将不可用!");
+                Console.WriteLine($"{PluginPrefix} ⚠ Warning: Economy plugin not found, purchase features will be unavailable!");
             }
         }
 
         public override void Load(bool hotReload)
         {
-            Console.WriteLine("[PlayersModel] 开始加载插件...");
+            Console.WriteLine($"{PluginPrefix} Loading plugin...");
 
             try
             {
@@ -61,6 +74,9 @@ namespace PlayersModel
 
                 // 初始化依赖注入
                 InitializeDependencyInjection();
+                
+                // 获取翻译服务
+                _translationService = _serviceProvider?.GetRequiredService<ITranslationService>();
 
                 // 初始化经济系统
                 InitializeEconomy();
@@ -77,18 +93,18 @@ namespace PlayersModel
                 // 注册事件
                 InitializeEvents();
 
-                Console.WriteLine("[PlayersModel] ✓ 插件加载成功!");
+                Console.WriteLine($"{PluginPrefix} {_translationService?.GetConsole("plugin.loaded") ?? "Plugin loaded successfully!"}");
                 
                 // 延迟初始化经济系统（确保Economy插件已加载）
                 Core.Scheduler.DelayBySeconds(1.0f, () =>
                 {
-                    Console.WriteLine("[PlayersModel] 延迟初始化经济系统...");
+                    Console.WriteLine($"{PluginPrefix} {_translationService?.GetConsole("system.economy_delayed_init") ?? "Delayed initialization of Economy system..."}");
                     
                     // 重新尝试获取经济API
                     if (_economyAPI == null && _interfaceManager != null && _interfaceManager.HasSharedInterface("Economy.API.v1"))
                     {
                         _economyAPI = _interfaceManager.GetSharedInterface<IEconomyAPIv1>("Economy.API.v1");
-                        Console.WriteLine("[PlayersModel] ✓ 延迟获取经济系统成功!");
+                        Console.WriteLine($"{PluginPrefix} {_translationService?.GetConsole("system.economy_delayed_success") ?? "Successfully connected to Economy system (delayed)!"}");
                     }
                     
                     // 重新初始化经济系统
@@ -97,14 +113,16 @@ namespace PlayersModel
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[PlayersModel] ✗ 插件加载失败: {ex.Message}");
-                Console.WriteLine($"[PlayersModel] 堆栈跟踪: {ex.StackTrace}");
+                var errorMsg = _translationService?.GetConsole("error.load_failed", ex.Message) ?? $"Plugin load failed: {ex.Message}";
+                var stackMsg = _translationService?.GetConsole("error.stack_trace", ex.StackTrace ?? "") ?? $"Stack trace: {ex.StackTrace ?? ""}";
+                Console.WriteLine($"{PluginPrefix} {errorMsg}");
+                Console.WriteLine($"{PluginPrefix} {stackMsg}");
             }
         }
 
         public override void Unload()
         {
-            Console.WriteLine("[PlayersModel] 插件已卸载");
+            Console.WriteLine($"{PluginPrefix} {_translationService?.GetConsole("plugin.unloaded") ?? "Plugin unloaded"}");
         }
 
         /// <summary>
@@ -128,7 +146,7 @@ namespace PlayersModel
                     builder.AddJsonFile("models.jsonc", optional: false, reloadOnChange: true);
                 });
 
-            Console.WriteLine("[PlayersModel] ✓ 配置文件初始化完成");
+            Console.WriteLine($"{PluginPrefix} {_translationService?.GetConsole("system.config_initialized") ?? "Configuration initialized"}");
         }
 
         /// <summary>
@@ -156,7 +174,7 @@ namespace PlayersModel
             services.AddSingleton<IModelService, ModelService>();
             services.AddSingleton<ITranslationService, TranslationService>();
             services.AddSingleton<IPreviewService, PreviewService>();
-        services.AddSingleton<IMenuService, MenuService>();
+            services.AddSingleton<IMenuService, MenuService>();
 
             _serviceProvider = services.BuildServiceProvider();
 
@@ -164,7 +182,7 @@ namespace PlayersModel
             _databaseService = _serviceProvider.GetRequiredService<IDatabaseService>();
             _modelService = _serviceProvider.GetRequiredService<IModelService>();
 
-            Console.WriteLine("[PlayersModel] ✓ 依赖注入初始化完成");
+            Console.WriteLine($"{PluginPrefix} {_translationService?.GetConsole("system.di_initialized") ?? "Dependency injection initialized"}");
         }
 
         /// <summary>
@@ -172,15 +190,13 @@ namespace PlayersModel
         /// </summary>
         private void InitializeEconomy()
         {
-            Console.WriteLine($"[PlayersModel] InitializeEconomy - _economyAPI: {(_economyAPI != null ? "已连接" : "null")}, _modelService: {(_modelService != null ? "已创建" : "null")}");
-            
             if (_economyAPI != null && _modelService != null)
             {
                 // 将经济 API 传递给模型服务
                 if (_modelService is ModelService modelService)
                 {
                     modelService.SetEconomyAPI(_economyAPI);
-                    Console.WriteLine("[PlayersModel] ✓ 经济API已成功传递给ModelService");
+                    Console.WriteLine($"{PluginPrefix} {_translationService?.GetConsole("system.economy_api_passed") ?? "Economy API successfully passed to ModelService"}");
                 }
 
                 // 确保钱包类型存在
@@ -189,18 +205,18 @@ namespace PlayersModel
                 {
                     var walletKind = config.CurrentValue.WalletKind;
                     _economyAPI.EnsureWalletKind(walletKind);
-                    Console.WriteLine($"[PlayersModel] ✓ 已初始化钱包类型: {walletKind}");
+                    Console.WriteLine($"{PluginPrefix} {_translationService?.GetConsole("system.economy_wallet_initialized", walletKind) ?? $"Wallet type initialized: {walletKind}"}");
                 }
             }
             else
             {
                 if (_economyAPI == null)
                 {
-                    Console.WriteLine("[PlayersModel] ⚠ 警告: 经济API为null，购买功能将不可用");
+                    Console.WriteLine($"{PluginPrefix} {_translationService?.GetConsole("system.economy_warning") ?? "Warning: Economy API is null, purchase features unavailable"}");
                 }
                 if (_modelService == null)
                 {
-                    Console.WriteLine("[PlayersModel] ⚠ 警告: ModelService为null");
+                    Console.WriteLine($"{PluginPrefix} {_translationService?.GetConsole("system.modelservice_warning") ?? "Warning: ModelService is null"}");
                 }
             }
         }
@@ -213,7 +229,7 @@ namespace PlayersModel
             if (_databaseService != null)
             {
                 await _databaseService.InitializeTablesAsync();
-                Console.WriteLine("[PlayersModel] ✓ 数据库初始化完成");
+                Console.WriteLine($"{PluginPrefix} {_translationService?.GetConsole("system.database_initialized") ?? "Database initialized"}");
             }
         }
 
@@ -226,7 +242,7 @@ namespace PlayersModel
             {
                 _modelService.LoadModels();
                 var models = _modelService.GetAllModels();
-                Console.WriteLine($"[PlayersModel] ✓ 已加载 {models.Count} 个模型");
+                Console.WriteLine($"{PluginPrefix} {_translationService?.GetConsole("system.models_loaded", models.Count) ?? $"Loaded {models.Count} models"}");
             }
         }
 
@@ -236,7 +252,7 @@ namespace PlayersModel
         private void RegisterEvents()
         {
             // 事件处理将在单独的文件中实现
-            Console.WriteLine("[PlayersModel] ✓ 事件监听器已注册");
+            Console.WriteLine($"{PluginPrefix} {_translationService?.GetConsole("system.events_registered") ?? "Event listeners registered"}");
         }
     }
 }

@@ -56,15 +56,18 @@ public class DatabaseService : IDatabaseService
     private readonly ISwiftlyCore _core;
     private readonly IOptionsMonitor<PluginConfig> _config;
     private readonly ILogger<DatabaseService> _logger;
+    private readonly ITranslationService _translation;
 
     public DatabaseService(
         ISwiftlyCore core,
         IOptionsMonitor<PluginConfig> config,
-        ILogger<DatabaseService> logger)
+        ILogger<DatabaseService> logger,
+        ITranslationService translation)
     {
         _core = core;
         _config = config;
         _logger = logger;
+        _translation = translation;
     }
 
     private IDbConnection GetConnection()
@@ -83,7 +86,7 @@ public class DatabaseService : IDatabaseService
     {
         if (!_config.CurrentValue.Database.AutoCreateTables)
         {
-            _logger.LogInformation("数据库表自动创建已禁用");
+            _logger.LogInformation(_translation.GetConsole("database.auto_create_disabled"));
             return;
         }
 
@@ -104,7 +107,7 @@ public class DatabaseService : IDatabaseService
             ";
 
             await connection.ExecuteAsync(createOwnedModelsTable);
-            _logger.LogInformation($"数据库表 {OwnedModelsTable} 初始化成功");
+            _logger.LogInformation(_translation.GetConsole("database.table_initialized", OwnedModelsTable));
 
             // 创建玩家当前装备的模型表 (新结构)
             var createCurrentModelsTable = $@"
@@ -117,11 +120,11 @@ public class DatabaseService : IDatabaseService
             ";
 
             await connection.ExecuteAsync(createCurrentModelsTable);
-            _logger.LogInformation($"数据库表 {CurrentModelsTable} 初始化成功");
+            _logger.LogInformation(_translation.GetConsole("database.table_initialized", CurrentModelsTable));
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "初始化数据库表失败");
+            _logger.LogError(ex, _translation.GetConsole("database.init_failed"));
             throw;
         }
     }
@@ -144,7 +147,7 @@ public class DatabaseService : IDatabaseService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"检查玩家 {steamId} 是否拥有模型 {modelId} 失败");
+            _logger.LogError(ex, _translation.GetConsole("database.check_owns_failed", steamId, modelId));
             return false;
         }
     }
@@ -163,11 +166,11 @@ public class DatabaseService : IDatabaseService
             ";
 
             await connection.ExecuteAsync(sql, new { SteamId = steamId, ModelId = modelId });
-            _logger.LogDebug($"添加玩家 {steamId} 拥有的模型 {modelId}");
+            _logger.LogDebug(_translation.GetConsole("database.add_model_debug", steamId, modelId));
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"添加玩家 {steamId} 拥有的模型 {modelId} 失败");
+            _logger.LogError(ex, _translation.GetConsole("database.add_model_failed", steamId, modelId));
             throw;
         }
     }
@@ -190,7 +193,7 @@ public class DatabaseService : IDatabaseService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"获取玩家 {steamId} 拥有的模型列表失败");
+            _logger.LogError(ex, _translation.GetConsole("database.get_models_failed", steamId));
             return new List<string>();
         }
     }
@@ -217,7 +220,7 @@ public class DatabaseService : IDatabaseService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"获取玩家 {steamId} 当前装备的模型失败");
+            _logger.LogError(ex, _translation.GetConsole("database.get_current_failed", steamId));
             return (null, null);
         }
     }
@@ -246,11 +249,11 @@ public class DatabaseService : IDatabaseService
                 ArmsPath = armsPath 
             });
             
-            _logger.LogDebug($"设置玩家 {steamId} 的模型: {modelPath}");
+            _logger.LogDebug(_translation.GetConsole("database.set_model_debug", steamId, modelPath));
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"设置玩家 {steamId} 的模型失败");
+            _logger.LogError(ex, _translation.GetConsole("database.set_model_failed", steamId));
             throw;
         }
     }
@@ -270,11 +273,11 @@ public class DatabaseService : IDatabaseService
             await connection.ExecuteAsync($"DELETE FROM {CurrentModelsTable} WHERE steam_id = @SteamId", 
                 new { SteamId = steamId });
             
-            _logger.LogInformation($"删除玩家 {steamId} 的所有数据");
+            _logger.LogInformation(_translation.GetConsole("database.delete_data", steamId));
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"删除玩家 {steamId} 的数据失败");
+            _logger.LogError(ex, _translation.GetConsole("database.delete_failed", steamId));
             throw;
         }
     }

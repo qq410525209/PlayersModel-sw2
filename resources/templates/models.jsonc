@@ -1,60 +1,6 @@
 {
   // 玩家模型配置列表
   "Models": [
-    // ========== 免费默认模型 ==========
-    {
-      // 模型 ID (数据库中的唯一标识, 必须唯一)
-      "ModelId": "default_ct",
-      
-      // 显示名称
-      "DisplayName": "默认 CT 模型",
-      
-      // 描述
-      "Description": "标准反恐精英模型",
-      
-      // 模型文件路径
-      "ModelPath": "characters/models/ctm_sas/ctm_sas.vmdl",
-      
-      // 手臂模型路径
-      "ArmsPath": "models/weapons/arms/ctm_sas_arms.vmdl",
-      
-      // 所属阵营: CT, T, All
-      "Team": "CT",
-      
-      // 价格 (0 = 免费)
-      "Price": 0,
-      
-      // 是否 VIP 专属
-      "VipOnly": false,
-      
-      // 所需权限 (为空 = 无需权限)
-      "RequiredPermission": "",
-      
-      // 限制的 Steam64 ID (为空 = 所有人可用)
-      "AllowedSteamIds": [],
-      
-      // 是否启用
-      "Enabled": true,
-      
-      // 排序优先级 (数字越小越靠前)
-      "Priority": 0
-    },
-    {
-      "ModelId": "default_t",
-      "DisplayName": "默认 T 模型",
-      "Description": "标准恐怖分子模型",
-      "ModelPath": "characters/models/tm_phoenix/tm_phoenix.vmdl",
-      "ArmsPath": "models/weapons/arms/tm_phoenix_arms.vmdl",
-      "Team": "T",
-      "Price": 0,
-      "VipOnly": false,
-      "RequiredPermission": "",
-      "AllowedSteamIds": [],
-      "Enabled": true,
-      "Priority": 0
-    },
-    
-    // ========== 可购买模型示例 ==========
     {
       "ModelId": "ct_gign",
       "DisplayName": "GIGN 特警",
@@ -147,19 +93,131 @@
     // ========== Steam ID 限制模型示例 ==========
     {
       "ModelId": "exclusive_model",
-      "DisplayName": "专属模型",
-      "Description": "仅限特定玩家使用",
-      "ModelPath": "characters/models/ctm_st6/ctm_st6.vmdl",
-      "ArmsPath": "models/weapons/arms/ctm_st6_arms.vmdl",
+      "DisplayName": "emu豆腐人",
+      "Description": "仅限emu豆腐人",
+      "ModelPath": "phase2/characters/xfdz/taofu/tofu.vmdl",
+      "ArmsPath": "phase2/characters/xfdz/xfdz/xfdz_ag2.vmdl",
       "Team": "All",
       "Price": 0,
       "VipOnly": false,
       "RequiredPermission": "",
       "AllowedSteamIds": [
-        76561198012345678  // 在这里添加允许的 Steam64 ID
+        76561198012345678
       ],
       "Enabled": true,
       "Priority": 100
+    },
+    {
+      "ModelId": "xsrx",
+      "DisplayName": "晓山瑞希",
+      "Description": "晓山瑞希-神高祭",
+      "ModelPath": "characters/models/pjsk/mizuki_ongakusai/mizuki_ongakusai.vmdl",
+      "ArmsPath": "",
+      "Team": "ct",
+      "Price": 500,
+      "VipOnly": false,
+      "RequiredPermission": "",
+      "AllowedSteamIds": [],
+      "Enabled": true,
+      "Priority": 1
+    },
+    {
+      "ModelId": "2b",
+      "DisplayName": "朝比奈真晓山瑞希",
+      "Description": "晓山瑞希-神山高校2b服装",
+      "ModelPath": "characters/models/kx/mizuki_kamiyama/mizuki_kamiyama.vmdl",
+      "ArmsPath": "",
+      "Team": "t",
+      "Price": 0,
+      "VipOnly": false,
+      "RequiredPermission": "",
+      "AllowedSteamIds": [],
+      "Enabled": true,
+      "Priority": 1
+    },
+    {
+      "ModelId": "saimaniang",
+      "DisplayName": "朝比奈真冬",
+      "Description": "朝比奈真冬-赛马娘泳装",
+      "ModelPath": "characters/models/pjsk/mafuyu_swimwear/mafuyu_swimwear.vmdl",
+      "ArmsPath": "",
+      "Team": "All",
+      "Price": 114511,
+      "VipOnly": false,
+      "RequiredPermission": "",
+      "AllowedSteamIds": [],
+      "Enabled": true,
+      "Priority": 1
+    },
+    {
+      "ModelId": "xsrxsgj",
+      "DisplayName": "晓山瑞希神高祭",
+      "Description": "晓山瑞希-神高祭",
+      "ModelPath": "characters/models/pjsk/mizuki_ongakusai/mizuki_ongakusai.vmdl",
+      "ArmsPath": "",
+      "Team": "T",
+      "Price": 500,
+      "VipOnly": false,
+      "RequiredPermission": "",
+      "AllowedSteamIds": [],
+      "Enabled": true,
+      "Priority": 1
+    },
+    {
+      "ModelId": "v4cchuyin",
+      "DisplayName": "v4c式初音未来",
+      "Description": "v4c式初音未来噢噢噢噢噢",
+      "ModelPath": "characters/models/kx/miku_v4c/miku_v4c.vmdl",
+      "ArmsPath": "",
+      "Team": "T",
+      "Price": 500,
+      "VipOnly": false,
+      "RequiredPermission": "",
+      "AllowedSteamIds": [],
+      "Enabled": true,
+      "Priority": 1
+    },
+    {
+      "ModelId": "v4cchuyin",
+      "DisplayName": "宵崎奏",
+      "Description": "宵崎奏-思い出を取り戻して",
+      "ModelPath": "characters/models/pjsk/25/knd/model/knd_bes.vmdl",
+      "ArmsPath": "",
+      "Team": "CT",
+      "Price": 500,
+      "VipOnly": false,
+      "RequiredPermission": "",
+      "AllowedSteamIds": [],
+      "Enabled": true,
+      "Priority": 1
+    },
+    {
+      "ModelId": "mafuyu",
+      "DisplayName": "白情",
+      "Description": "白情mafuyu",
+      "ModelPath": "characters/models/kx/mafuyu/mafuyu.vmdl",
+      "ArmsPath": "",
+      "Team": "CT",
+      "Price": 500,
+      "VipOnly": false,
+      "RequiredPermission": "",
+      "AllowedSteamIds": [],
+      "Enabled": true,
+      "Priority": 1
+    },
+    {
+      "ModelId": "mzk",
+      "DisplayName": "mzk长裙月卡",
+      "Description": "mzk长裙月卡12345",
+      "ModelPath": "characters/models/kx/mizuki/mizuki.vmdl",
+      "ArmsPath": "",
+      "Team": "ALL",
+      "Price": 500,
+      "VipOnly": false,
+      "RequiredPermission": "",
+      "AllowedSteamIds": [],
+      "Enabled": true,
+      "Priority": 1
     }
   ]
 }

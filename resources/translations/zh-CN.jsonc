@@ -1,63 +1,157 @@
 {
   // PlayersModel 插件中文翻译
   
-  // 通用消息
-  "plugin.loaded": "PlayersModel 插件已加载",
-  "plugin.unloaded": "PlayersModel 插件已卸载",
+  // ========== 通用消息 ==========
+  "plugin.loaded": "插件加载成功!",
+  "plugin.unloaded": "插件已卸载",
+  "plugin.loading": "开始加载插件...",
   
-  // 菜单标题
+  // ========== 系统初始化消息 ==========
+  "system.config_initialized": "✓ 配置文件初始化完成",
+  "system.di_initialized": "✓ 依赖注入初始化完成",
+  "system.economy_connected": "✓ 成功连接到经济系统!",
+  "system.economy_not_found": "⚠ 警告: 未找到经济系统插件,购买模型功能将不可用!",
+  "system.economy_warning": "⚠ 警告: 经济API为null，购买功能将不可用",
+  "system.economy_delayed_init": "延迟初始化经济系统...",
+  "system.economy_delayed_success": "✓ 延迟获取经济系统成功!",
+  "system.economy_api_passed": "✓ 经济API已成功传递给ModelService",
+  "system.economy_wallet_initialized": "✓ 已初始化钱包类型: {0}",
+  "system.database_initialized": "✓ 数据库初始化完成",
+  "system.models_loaded": "✓ 已加载 {0} 个模型",
+  "system.models_loading": "已加载 {0} 个模型配置",
+  "system.events_registered": "✓ 事件监听器已注册",
+  "system.commands_registered": "✓ 命令系统已注册",
+  "system.modelservice_warning": "⚠ 警告: ModelService为null",
+  "system.service_not_loaded": "错误: 服务未加载",
+  
+  // ========== 数据库消息 ==========
+  "database.auto_create_disabled": "数据库表自动创建已禁用",
+  "database.table_initialized": "数据库表 {0} 初始化成功",
+  "database.init_failed": "初始化数据库表失败",
+  "database.check_owns_failed": "检查玩家 {0} 是否拥有模型 {1} 失败",
+  "database.add_model_failed": "添加玩家 {0} 拥有的模型 {1} 失败",
+  "database.add_model_debug": "添加玩家 {0} 拥有的模型 {1}",
+  "database.get_models_failed": "获取玩家 {0} 拥有的模型列表失败",
+  "database.get_current_failed": "获取玩家 {0} 当前装备的模型失败",
+  "database.set_model_debug": "设置玩家 {0} 的模型: {1}",
+  "database.set_model_failed": "设置玩家 {0} 的模型失败",
+  "database.delete_data": "删除玩家 {0} 的所有数据",
+  "database.delete_failed": "删除玩家 {0} 的数据失败",
+  
+  // ========== 模型服务消息 ==========
+  "modelservice.model_not_found": "模型 {0} 不存在",
+  "modelservice.no_permission": "玩家 {0} 没有权限使用模型 {1}",
+  "modelservice.not_owned": "玩家 {0} 未拥有模型 {1}",
+  "modelservice.applied": "玩家 {0} 应用模型 {1}",
+  "modelservice.apply_failed": "应用模型失败: {0}",
+  "modelservice.purchase_called": "PurchaseModelAsync 被调用 - 玩家: {0}, 模型ID: {1}",
+  "modelservice.economy_status": "_economyAPI 状态: {0}",
+  "modelservice.purchase_disabled": "购买系统未启用",
+  "modelservice.purchased": "玩家 {0} 购买模型 {1}, 花费 {2} {3}",
+  "modelservice.purchase_failed": "购买模型失败: {0}",
+  
+  // ========== 事件消息 ==========
+  "events.precache_model": "预缓存模型: {0}",
+  "events.precache_arms": "预缓存手臂模型: {0}",
+  "events.player_join_applied": "玩家进入应用模型: {0}",
+  "events.player_join_failed": "玩家进入应用模型失败: {0}",
+  "events.player_spawn_applied": "玩家重生应用模型: {0}",
+  "events.player_spawn_failed": "玩家重生应用模型失败: {0}",
+  "events.round_start": "回合开始，为所有玩家应用保存的模型",
+  "events.round_start_applied": "回合开始应用模型: {0}",
+  "events.round_start_failed": "回合开始应用模型失败: {0}",
+  
+  // ========== 菜单服务消息 ==========
+  "menuservice.player_equipped": "玩家 {0} 装备模型: {1}",
+  "menuservice.player_unequipped": "玩家 {0} 卸载模型，恢复{1}默认模型",
+  
+  // ========== 预览服务消息 ==========
+  "preview.showing": "玩家 {0} 预览模型: {1}",
+  "preview.error": "预览模型时出错: {0}",
+  
+  // ========== 命令消息 ==========
+  "command.player_only": "此命令只能由玩家使用!",
+  "command.model.usage": "用法: !model - 打开模型选择菜单",
+  "command.buymodel.usage": "用法: !buymodel <模型ID>",
+  "command.balance.format": "余额: {0} {1}",
+  "command.mymodels.viewing": "正在查看你的模型...",
+  "command.menu_not_loaded": "菜单服务未加载!",
+  
+  // ========== 管理员命令消息 ==========
+  "admin.permission_required": "需要管理员权限",
+  "admin.givecredits.usage": "用法: !pm_givecredits <玩家名> <数量>",
+  "admin.givecredits.invalid_amount": "无效的数量!",
+  "admin.givecredits.player_not_found": "未找到玩家: {0}",
+  "admin.givecredits.economy_not_loaded": "经济系统未加载!",
+  "admin.givecredits.success": "✓ 已给予 {0} {1} {2}, 新余额: {3}",
+  "admin.givemodel.usage": "用法: !pm_givemodel <玩家名> <模型ID>",
+  "admin.givemodel.player_not_found": "未找到玩家: {0}",
+  "admin.givemodel.model_not_found": "✗ 模型不存在: {0}",
+  "admin.givemodel.success": "✓ 已给予 {0} 模型: {1}",
+  "admin.setmodel.usage": "用法: !pm_setmodel <玩家名> <模型ID>",
+  "admin.setmodel.player_not_found": "未找到玩家: {0}",
+  "admin.setmodel.success": "✓ 已为 {0} 设置模型: {1}",
+  "admin.setmodel.failed": "✗ 设置模型失败",
+  "admin.reload.success": "✓ 配置已重新加载",
+  "admin.reload.failed": "✗ 重新加载配置失败: {0}",
+  "admin.listmodels.usage": "用法: !pm_listmodels <玩家名>",
+  "admin.listmodels.player_not_found": "未找到玩家: {0}",
+  "admin.listmodels.no_models": "{0} 还没有任何模型",
+  "admin.listmodels.title": "=== {0} 的模型 ({1}) ===",
+  "admin.listmodels.item": "- {0} ({1})",
+  
+  // ========== 菜单标题 ==========
   "menu.main.title": "🎭 玩家模型选择",
   "menu.ct_models.title": "反恐精英 (CT) 模型",
   "menu.t_models.title": "恐怖分子 (T) 模型",
   "menu.owned_models.title": "我的模型",
   "menu.vip_models.title": "⭐ VIP 专属模型",
+  "menu.all_models.title": "通用模型",
   
-  // 菜单选项
-  "menu.option.ct_models": "反恐精英模型",
-  "menu.option.t_models": "恐怖分子模型",
+  // ========== 菜单选项 ==========
+  "menu.option.ct_models": "CT模型",
+  "menu.option.t_models": "T模型",
+  "menu.option.all_models": "通用模型",
   "menu.option.owned_models": "我的模型",
   "menu.option.vip_models": "VIP 模型",
-  "menu.option.buy_model": "购买 ({0} credits)",
-  "menu.option.equip_model": "装备",
-  "menu.option.equipped": "✓ 已装备",
+  "menu.option.buy_model": "💰 购买 ({0} credits)",
+  "menu.option.equip_model": "✅ 装备模型",
+  "menu.option.unequip_model": "❌ 卸载模型",
+  "menu.option.equipped": "✅ 已装备",
   "menu.option.owned": "✓ 已拥有",
   "menu.option.locked": "🔒 未拥有",
+  "menu.option.no_models": "你还没有任何模型",
+  "menu.option.preview": "🔍 预览模型",
   
-  // 命令消息
-  "command.model.usage": "用法: !model - 打开模型选择菜单",
-  "command.buymodel.usage": "用法: !buymodel <模型ID> - 购买指定模型",
-  "command.balance.format": "💰 你的余额: {0} credits",
+  // ========== 购买系统 ==========
+  "purchase.success": "成功购买 {0}! 剩余: {1} {2}",
+  "purchase.already_owned": "你已经拥有此模型",
+  "purchase.insufficient_funds": "余额不足! 需要: {0} {1}, 当前: {2} {3}",
+  "purchase.system_disabled": "模型购买系统未启用",
+  "purchase.economy_unavailable": "经济系统未加载",
+  "purchase.model_not_found": "模型不存在",
+  "purchase.no_permission": "你没有权限使用此模型",
+  "purchase.free_model": "成功获得免费模型: {0}",
+  "purchase.failed": "购买失败,请联系管理员",
   
-  // 购买系统
-  "purchase.success": "✓ 成功购买 {0}! 剩余: {1} credits",
-  "purchase.already_owned": "✗ 你已经拥有此模型",
-  "purchase.insufficient_funds": "✗ 余额不足! 需要: {0} credits, 当前: {1} credits",
-  "purchase.system_disabled": "✗ 模型购买系统未启用",
-  "purchase.economy_unavailable": "✗ 经济系统未加载",
-  "purchase.model_not_found": "✗ 模型不存在",
-  "purchase.no_permission": "✗ 你没有权限购买此模型",
-  "purchase.free_model": "✓ 成功获得免费模型: {0}",
-  
-  // 模型应用
+  // ========== 模型应用 ==========
   "model.applied": "✓ 已切换模型: {0}",
   "model.apply_failed": "✗ 应用模型失败",
-  "model.not_owned": "✗ 你未拥有此模型",
-  "model.no_permission": "✗ 你没有权限使用此模型",
-  "model.vip_only": "✗ 此模型仅限 VIP 使用",
+  "model.not_owned": "你未拥有此模型",
+  "model.no_permission": "你没有权限使用此模型",
+  "model.vip_only": "此模型仅限 VIP 使用",
+  "model.not_found": "模型 {0} 不存在",
+  "model.unequipped": "玩家 {0} 卸载模型，恢复{1}默认模型",
   
-  // 权限消息
-  "permission.required": "✗ 需要权限: {0}",
-  "permission.vip_required": "✗ 需要 VIP 权限",
-  "permission.admin_required": "✗ 需要管理员权限",
+  // ========== 权限消息 ==========
+  "permission.required": "需要权限: {0}",
+  "permission.vip_required": "需要 VIP 权限",
+  "permission.admin_required": "需要管理员权限",
   
-  // 系统消息
-  "system.economy_connected": "✓ 成功连接到经济系统",
-  "system.economy_not_found": "⚠ 未找到经济系统插件",
-  "system.database_initialized": "✓ 数据库初始化完成",
-  "system.models_loaded": "✓ 已加载 {0} 个模型",
-  
-  // 错误消息
-  "error.generic": "✗ 发生错误,请联系管理员",
-  "error.invalid_player": "✗ 无效的玩家",
-  "error.command_failed": "✗ 命令执行失败"
+  // ========== 错误消息 ==========
+  "error.generic": "发生错误,请联系管理员",
+  "error.invalid_player": "无效的玩家",
+  "error.command_failed": "命令执行失败",
+  "error.load_failed": "✗ 插件加载失败: {0}",
+  "error.stack_trace": "堆栈跟踪: {0}"
 }

@@ -23,12 +23,12 @@ public partial class PlayersModel
                 if (!string.IsNullOrEmpty(model.ModelPath))
                 {
                     @event.AddItem(model.ModelPath);
-                    logger?.LogInformation($"预缓存模型: {model.ModelPath}");
+                    logger?.LogInformation(_translationService?.GetConsole("events.precache_model", model.ModelPath) ?? $"Precaching model: {model.ModelPath}");
                 }
                 if (!string.IsNullOrEmpty(model.ArmsPath))
                 {
                     @event.AddItem(model.ArmsPath);
-                    logger?.LogInformation($"预缓存手臂模型: {model.ArmsPath}");
+                    logger?.LogInformation(_translationService?.GetConsole("events.precache_arms", model.ArmsPath) ?? $"Precaching arms model: {model.ArmsPath}");
                 }
             }
         };
@@ -52,13 +52,13 @@ public partial class PlayersModel
                     {
                         player.Pawn.SetModel(modelData.modelPath);
                         var logger = _serviceProvider?.GetService<ILogger<PlayersModel>>();
-                        logger?.LogInformation($"玩家进入应用模型: {player.Controller.PlayerName}");
+                        logger?.LogInformation(_translationService?.GetConsole("events.player_join_applied", player.Controller.PlayerName) ?? $"Applied model on join: {player.Controller.PlayerName}");
                     }
                 }
                 catch (Exception ex)
                 {
                     var logger = _serviceProvider?.GetService<ILogger<PlayersModel>>();
-                    logger?.LogError(ex, $"玩家进入应用模型失败: {player?.Controller.PlayerName}");
+                    logger?.LogError(ex, _translationService?.GetConsole("events.player_join_failed", player?.Controller.PlayerName ?? "") ?? $"Failed to apply model on join: {player?.Controller.PlayerName}");
                 }
             });
         };
@@ -80,13 +80,13 @@ public partial class PlayersModel
                     {
                         player.Pawn.SetModel(modelData.modelPath);
                         var logger = _serviceProvider?.GetService<ILogger<PlayersModel>>();
-                        logger?.LogInformation($"玩家重生应用模型: {player.Controller.PlayerName}");
+                        logger?.LogInformation(_translationService?.GetConsole("events.player_spawn_applied", player.Controller.PlayerName) ?? $"Applied model on spawn: {player.Controller.PlayerName}");
                     }
                 }
                 catch (Exception ex)
                 {
                     var logger = _serviceProvider?.GetService<ILogger<PlayersModel>>();
-                    logger?.LogError(ex, $"玩家重生应用模型失败: {player?.Controller.PlayerName}");
+                    logger?.LogError(ex, _translationService?.GetConsole("events.player_spawn_failed", player?.Controller.PlayerName ?? "") ?? $"Failed to apply model on spawn: {player?.Controller.PlayerName}");
                 }
             });
             
@@ -100,7 +100,7 @@ public partial class PlayersModel
             if (playerManager == null) return HookResult.Continue;
 
             var logger = _serviceProvider?.GetService<ILogger<PlayersModel>>();
-            logger?.LogInformation("回合开始，为所有玩家应用保存的模型");
+            logger?.LogInformation(_translationService?.GetConsole("events.round_start") ?? "Round started, applying saved models to all players");
 
             Core.Scheduler.DelayBySeconds(0.5f, () =>
             {
@@ -117,12 +117,12 @@ public partial class PlayersModel
                         if (!string.IsNullOrEmpty(modelData.modelPath))
                         {
                             player.Pawn.SetModel(modelData.modelPath);
-                            logger?.LogInformation($"回合开始应用模型: {player.Controller.PlayerName}");
+                            logger?.LogInformation(_translationService?.GetConsole("events.round_start_applied", player.Controller.PlayerName) ?? $"Applied model on round start: {player.Controller.PlayerName}");
                         }
                     }
                     catch (Exception ex)
                     {
-                        logger?.LogError(ex, $"回合开始应用模型失败: {player?.Controller.PlayerName}");
+                        logger?.LogError(ex, _translationService?.GetConsole("events.round_start_failed", player?.Controller.PlayerName ?? "") ?? $"Failed to apply model on round start: {player?.Controller.PlayerName}");
                     }
                 }
             });
@@ -130,6 +130,6 @@ public partial class PlayersModel
             return HookResult.Continue;
         });
 
-        Console.WriteLine("[PlayersModel] ✓ 事件监听器已注册");
+        Console.WriteLine($"{PluginPrefix} {_translationService?.GetConsole("system.events_registered") ?? "Event listeners registered"}");
     }
 }
