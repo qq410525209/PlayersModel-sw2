@@ -196,18 +196,8 @@ public class MenuService : IMenuService
         if (menuConfig.EnableSound) builder.EnableSound();
 
         // 模型信息
-        builder.AddOption(new TextMenuOption(model.Description)
-        {
-            Enabled = false,
-            PlaySound = false
-        }
-        );
-        builder.AddOption(new TextMenuOption($"{_translation["model.team"]}: {model.Team}")
-        {
-            Enabled = false,
-            PlaySound = false
-        }
-        );
+        builder.AddOption(new TextMenuOption(model.Description));
+        builder.AddOption(new TextMenuOption($"{_translation["model.team"]}: {model.Team}"));
         
         var owns = await _databaseService.PlayerOwnsModelAsync(player.SteamID, modelId);
         
@@ -275,12 +265,11 @@ public class MenuService : IMenuService
     private async Task UnequipModelAsync(IPlayer player, string team)
     {
         // 删除数据库中对应槽位的记录
-        // 不保存默认模型到数据库，默认模型只在查询不到记录时使用
         await _databaseService.DeletePlayerCurrentModelAsync(player.SteamID, team);
         
         _logger.LogInformation(_translation.GetConsole("menuservice.player_unequipped", player.Controller.PlayerName, team));
         
-        // 如果玩家在线，需要重新应用模型（按优先级）
+        // 卸载后，重新按优先级查找并应用模型
         if (player.Pawn?.IsValid == true)
         {
             var currentTeam = player.Controller.TeamNum;
@@ -290,14 +279,16 @@ public class MenuService : IMenuService
             {
                 string modelPathToApply = "";
                 
-                // 卸载后按优先级查找模型：
-                // 1. 如果卸载的是All，检查当前阵营槽位是否有模型
-                // 2. 如果卸载的是CT/T，不需要检查（因为已经删除了）
-                // 3. 如果都没有，使用默认模型
-                
-                if (team.Equals("All", StringComparison.OrdinalIgnoreCase))
+                // 优先级系统：All > CT/T > 默认
+                // 1. 先检查All槽位
+                var allModelData = await _databaseService.GetPlayerCurrentModelAsync(player.SteamID, "All");
+                if (!string.IsNullOrEmpty(allModelData.modelPath))
                 {
-                    // 卸载All后，检查当前阵营槽位
+                    modelPathToApply = allModelData.modelPath;
+                }
+                else
+                {
+                    // 2. 检查当前阵营槽位
                     var teamModelData = await _databaseService.GetPlayerCurrentModelAsync(player.SteamID, teamName);
                     if (!string.IsNullOrEmpty(teamModelData.modelPath))
                     {
@@ -305,7 +296,7 @@ public class MenuService : IMenuService
                     }
                 }
                 
-                // 如果没有找到模型，使用默认模型
+                // 3. 如果都没有，使用默认模型
                 if (string.IsNullOrEmpty(modelPathToApply))
                 {
                     modelPathToApply = teamName == "CT" 

@@ -221,11 +221,15 @@ public class ModelService : IModelService
                     return false;
                 }
             }
-
-            // TODO: 这里需要实际应用模型到玩家
-            // 需要使用 CS2 的 Schema API 或 Native Functions
-            // 使用 SetModelAsync 设置玩家模型
             
+            // 先保存模型到对应槽位
+            // All类型保存到All槽位，CT保存到CT槽位，T保存到T槽位
+            var targetTeam = model.Team; // "All"、"CT" 或 "T"
+            _database.SetPlayerCurrentModelAsync(
+                player.SteamID, 
+                player.Controller.PlayerName, 
+                modelId, model.ModelPath, model.ArmsPath, targetTeam).GetAwaiter().GetResult();
+
             // 获取玩家当前阵营
             var currentTeam = player.Controller.TeamNum;
             var teamName = currentTeam == 2 ? "T" : currentTeam == 3 ? "CT" : "Unknown";
@@ -235,31 +239,59 @@ public class ModelService : IModelService
                               model.Team.Equals(teamName, StringComparison.OrdinalIgnoreCase);
             
             // 只有阵营匹配时，才根据配置决定是否立即应用
-            bool shouldApplyNow;
-            if (teamMatches && _config.CurrentValue.ApplyModelImmediately)
-            {
-                // 阵营匹配 + 立即生效模式：立即应用
-                shouldApplyNow = true;
-            }
-            else
-            {
-                // 阵营不匹配 或 重生生效模式：保存配置，等重生应用
-                shouldApplyNow = false;
-            }
+            bool shouldApplyNow = teamMatches && _config.CurrentValue.ApplyModelImmediately;
             
             if (shouldApplyNow && player.Pawn?.IsValid == true)
             {
-                // 在主线程设置主模型
-                var pawn = player.Pawn;
-                var modelPath = model.ModelPath;
-                _core.Scheduler.DelayBySeconds(0.01f, () =>
+                // 如果装备的是CT/T模型，检查是否已经装备了All模型
+                // 如果有All模型，不执行立即应用（因为All优先级更高，会立即应用All）
+                if (!model.Team.Equals("All", StringComparison.OrdinalIgnoreCase))
                 {
-                    if (pawn?.IsValid == true)
+                    var allModelData = _database.GetPlayerCurrentModelAsync(player.SteamID, "All").GetAwaiter().GetResult();
+                    if (!string.IsNullOrEmpty(allModelData.modelPath))
                     {
-                        pawn.SetModel(modelPath);
+                        // 已装备All模型，不执行立即应用，只保存到数据库
+                        _logger.LogInformation(_translation.GetConsole("modelservice.saved_for_later", player.Controller.PlayerName, model.DisplayName, model.Team));
+                        _logger.LogInformation(_translation.GetConsole("modelservice.applied", player.Controller.PlayerName, model.DisplayName));
+                        return true;
                     }
-                });
-                _logger.LogInformation(_translation.GetConsole("modelservice.applied_now", player.Controller.PlayerName, model.DisplayName));
+                }
+                
+                // 立即应用模型，按优先级
+                string modelPathToApply = "";
+                
+                // 优先级系统：All > CT/T
+                // 1. 先检查All槽位
+                var allModelData2 = _database.GetPlayerCurrentModelAsync(player.SteamID, "All").GetAwaiter().GetResult();
+                if (!string.IsNullOrEmpty(allModelData2.modelPath))
+                {
+                    // All槽位有模型，优先使用All
+                    modelPathToApply = allModelData2.modelPath;
+                }
+                else
+                {
+                    // 2. All槽位没有，使用当前阵营槽位的模型
+                    var teamModelData = _database.GetPlayerCurrentModelAsync(player.SteamID, teamName).GetAwaiter().GetResult();
+                    if (!string.IsNullOrEmpty(teamModelData.modelPath))
+                    {
+                        modelPathToApply = teamModelData.modelPath;
+                    }
+                }
+                
+                // 应用模型
+                if (!string.IsNullOrEmpty(modelPathToApply))
+                {
+                    var pawn = player.Pawn;
+                    var pathToApply = modelPathToApply;
+                    _core.Scheduler.DelayBySeconds(0.01f, () =>
+                    {
+                        if (pawn?.IsValid == true)
+                        {
+                            pawn.SetModel(pathToApply);
+                        }
+                    });
+                    _logger.LogInformation(_translation.GetConsole("modelservice.applied_now", player.Controller.PlayerName, model.DisplayName));
+                }
             }
             else
             {
@@ -268,14 +300,6 @@ public class ModelService : IModelService
                     ? "CT和T" : model.Team;
                 _logger.LogInformation(_translation.GetConsole("modelservice.saved_for_later", player.Controller.PlayerName, model.DisplayName, targetTeams));
             }
-            
-            // 根据模型的Team属性保存到对应槽位
-            // All类型保存到All槽位，CT保存到CT槽位，T保存到T槽位
-            var targetTeam = model.Team; // "All"、"CT" 或 "T"
-            _database.SetPlayerCurrentModelAsync(
-                player.SteamID, 
-                player.Controller.PlayerName, 
-                modelId, model.ModelPath, model.ArmsPath, targetTeam).GetAwaiter().GetResult();
 
             _logger.LogInformation(_translation.GetConsole("modelservice.applied", player.Controller.PlayerName, model.DisplayName));
             return true;
