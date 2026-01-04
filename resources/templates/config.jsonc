@@ -17,6 +17,9 @@
     // Economy 钱包类型economy&credits (用于购买模型)
     "WalletKind": "credits",
     
+    // 装备模型后是否立即生效 (true=立即生效，false=下次重生生效)
+    "ApplyModelImmediately": false,
+    
     // 默认 CT 模型路径 (卸载模型时恢复)
     "DefaultCTModelPath": "characters/models/ctm_sas/ctm_sas.vmdl",
     

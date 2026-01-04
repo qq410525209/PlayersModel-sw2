@@ -139,7 +139,8 @@ public class ModelService : IModelService
         return allModels.Where(model =>
         {
             // 检查阵营筛选
-            if (team != null && model.Team.ToLower() != "all" && model.Team.ToLower() != team.ToLower())
+
+            if (team != null && model.Team.ToLower() != team.ToLower())
                 return false;
 
             // 检查 Steam ID 限制
@@ -224,7 +225,29 @@ public class ModelService : IModelService
             // TODO: 这里需要实际应用模型到玩家
             // 需要使用 CS2 的 Schema API 或 Native Functions
             // 使用 SetModelAsync 设置玩家模型
-            if (player.Pawn?.IsValid == true)
+            
+            // 获取玩家当前阵营
+            var currentTeam = player.Controller.TeamNum;
+            var teamName = currentTeam == 2 ? "T" : currentTeam == 3 ? "CT" : "Unknown";
+            
+            // 检查阵营是否匹配
+            bool teamMatches = model.Team.Equals("All", StringComparison.OrdinalIgnoreCase) ||
+                              model.Team.Equals(teamName, StringComparison.OrdinalIgnoreCase);
+            
+            // 只有阵营匹配时，才根据配置决定是否立即应用
+            bool shouldApplyNow;
+            if (teamMatches && _config.CurrentValue.ApplyModelImmediately)
+            {
+                // 阵营匹配 + 立即生效模式：立即应用
+                shouldApplyNow = true;
+            }
+            else
+            {
+                // 阵营不匹配 或 重生生效模式：保存配置，等重生应用
+                shouldApplyNow = false;
+            }
+            
+            if (shouldApplyNow && player.Pawn?.IsValid == true)
             {
                 // 在主线程设置主模型
                 var pawn = player.Pawn;
@@ -236,13 +259,14 @@ public class ModelService : IModelService
                         pawn.SetModel(modelPath);
                     }
                 });
+                _logger.LogInformation(_translation.GetConsole("modelservice.applied_now", player.Controller.PlayerName, model.DisplayName));
             }
-
-            // 保存玩家当前使用的模型
-            // 获取玩家当前阵营
-            var currentTeam = player.Controller.TeamNum;
-            var teamName = currentTeam == 2 ? "T" : currentTeam == 3 ? "CT" : "Unknown";
+            else
+            {
+                _logger.LogInformation(_translation.GetConsole("modelservice.saved_for_later", player.Controller.PlayerName, model.DisplayName, teamName));
+            }
             
+            // 保存玩家选择的模型到数据库
             _database.SetPlayerCurrentModelAsync(
                 player.SteamID, 
                 player.Controller.PlayerName, 

@@ -131,6 +131,9 @@ public class MenuService : IMenuService
 
         if (menuConfig.EnableSound) builder.EnableSound();
 
+        // 获取玩家当前装备的模型
+        var currentModel = await _databaseService.GetPlayerCurrentModelAsync(player.SteamID);
+        
         var ownedModelIds = await _databaseService.GetPlayerOwnedModelsAsync(player.SteamID);
 
         if (ownedModelIds.Count == 0)
@@ -145,8 +148,12 @@ public class MenuService : IMenuService
                 if (model == null) continue;
 
                 var capturedId = modelId;
-                // 子菜单：使用SubmenuMenuOption自动处理返回
-                builder.AddOption(new SubmenuMenuOption($"✓ {model.DisplayName}", () => BuildModelDetailMenuAsync(player, capturedId)));
+                
+                // 检查是否是当前装备的模型
+                bool isEquipped = currentModel.modelPath == model.ModelPath;
+                var displayName = isEquipped ? $"✓ {model.DisplayName}" : $"  {model.DisplayName}";
+                
+                builder.AddOption(new SubmenuMenuOption(displayName, () => BuildModelDetailMenuAsync(player, capturedId)));
             }
         }
 

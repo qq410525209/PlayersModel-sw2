@@ -32,6 +32,12 @@ public class PluginConfig
     public string WalletKind { get; set; } = "credits";
 
     /// <summary>
+    /// 装备模型后是否立即生效（true=立即生效，false=下次重生生效）
+    /// </summary>
+    public bool ApplyModelImmediately { get; set; } = false;
+
+
+    /// <summary>
     /// 默认 CT 模型路径 (卸载模型时恢复)
     /// </summary>
     public string DefaultCTModelPath { get; set; } = "characters/models/ctm_sas/ctm_sas.vmdl";
