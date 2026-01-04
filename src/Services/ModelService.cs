@@ -58,6 +58,7 @@ public class ModelService : IModelService
     private readonly IOptionsMonitor<ModelConfigRoot> _modelConfig;
     private readonly IDatabaseService _database;
     private readonly ILogger<ModelService> _logger;
+    private readonly ITranslationService _translation;
     private IEconomyAPIv1? _economyAPI;
 
     public ModelService(
@@ -65,13 +66,15 @@ public class ModelService : IModelService
         IOptionsMonitor<PluginConfig> config,
         IOptionsMonitor<ModelConfigRoot> modelConfig,
         IDatabaseService database,
-        ILogger<ModelService> logger)
+        ILogger<ModelService> logger,
+        ITranslationService translation)
     {
         _core = core;
         _config = config;
         _modelConfig = modelConfig;
         _database = database;
         _logger = logger;
+        _translation = translation;
     }
 
     /// <summary>
@@ -102,7 +105,7 @@ public class ModelService : IModelService
     public void LoadModels()
     {
         var models = _modelConfig.CurrentValue.Models;
-        _logger.LogInformation($"已加载 {models.Count} 个模型配置");
+        _logger.LogInformation(_translation.GetConsole("system.models_loading", models.Count));
     }
 
     /// <summary>
@@ -196,14 +199,14 @@ public class ModelService : IModelService
             var model = GetModelById(modelId);
             if (model == null)
             {
-                _logger.LogWarning($"模型 {modelId} 不存在");
+                _logger.LogWarning(_translation.GetConsole("modelservice.model_not_found", modelId));
                 return false;
             }
 
             // 检查权限
             if (!CanPlayerUseModel(player, modelId))
             {
-                _logger.LogWarning($"玩家 {player.Controller.PlayerName} 没有权限使用模型 {modelId}");
+                _logger.LogWarning(_translation.GetConsole("modelservice.no_permission", player.Controller.PlayerName, modelId));
                 return false;
             }
 
@@ -213,7 +216,7 @@ public class ModelService : IModelService
                 var owns = _database.PlayerOwnsModelAsync(player.SteamID, modelId).GetAwaiter().GetResult();
                 if (!owns)
                 {
-                    _logger.LogWarning($"玩家 {player.Controller.PlayerName} 未拥有模型 {modelId}");
+                    _logger.LogWarning(_translation.GetConsole("modelservice.not_owned", player.Controller.PlayerName, modelId));
                     return false;
                 }
             }
@@ -239,12 +242,12 @@ public class ModelService : IModelService
             // 保存玩家当前使用的模型
             _database.SetPlayerCurrentModelAsync(player.SteamID, model.ModelPath, model.ArmsPath).GetAwaiter().GetResult();
 
-            _logger.LogInformation($"玩家 {player.Controller.PlayerName} 应用模型 {model.DisplayName}");
+            _logger.LogInformation(_translation.GetConsole("modelservice.applied", player.Controller.PlayerName, model.DisplayName));
             return true;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"应用模型失败: {modelId}");
+            _logger.LogError(ex, _translation.GetConsole("modelservice.apply_failed", modelId));
             return false;
         }
     }
@@ -256,48 +259,47 @@ public class ModelService : IModelService
     {
         try
         {
-            _logger.LogInformation($"PurchaseModelAsync 被调用 - 玩家: {player.Controller.PlayerName}, 模型ID: {modelId}");
-            _logger.LogInformation($"_economyAPI 状态: {(_economyAPI != null ? "已设置" : "null")}");
-            _logger.LogInformation($"购买系统启用: {_config.CurrentValue.EnablePurchaseSystem}");
+            _logger.LogInformation(_translation.GetConsole("modelservice.purchase_called", player.Controller.PlayerName, modelId));
+            _logger.LogInformation(_translation.GetConsole("modelservice.economy_status", _economyAPI != null ? "Connected" : "null"));
             
             // 检查购买系统是否启用
             if (!_config.CurrentValue.EnablePurchaseSystem)
             {
-                _logger.LogWarning("购买系统未启用");
-                return (false, "[PlayersModel] 模型购买系统未启用");
+                _logger.LogWarning(_translation.GetConsole("modelservice.purchase_disabled"));
+                return (false, _translation.Get("purchase.system_disabled", player));
             }
 
             // 检查经济系统是否可用
             if (_economyAPI == null)
             {
-                _logger.LogError("经济API为null！无法执行购买操作");
-                return (false, "[PlayersModel] 经济系统未加载");
+                _logger.LogError(_translation.GetConsole("system.economy_warning"));
+                return (false, _translation.Get("purchase.economy_unavailable", player));
             }
 
             var model = GetModelById(modelId);
             if (model == null)
             {
-                return (false, "[PlayersModel] 模型不存在");
+                return (false, _translation.Get("purchase.model_not_found", player));
             }
 
             // 检查权限
             if (!CanPlayerUseModel(player, modelId))
             {
-                return (false, "[PlayersModel] 你没有权限使用此模型");
+                return (false, _translation.Get("purchase.no_permission", player));
             }
 
             // 检查是否已拥有
             var alreadyOwns = await _database.PlayerOwnsModelAsync(player.SteamID, modelId);
             if (alreadyOwns)
             {
-                return (false, "[PlayersModel] 你已经拥有此模型");
+                return (false, _translation.Get("purchase.already_owned", player));
             }
 
             // 免费模型直接添加
             if (model.Price == 0)
             {
                 await _database.AddOwnedModelAsync(player.SteamID, modelId);
-                return (true, $"[PlayersModel] 成功获得免费模型: {model.DisplayName}");
+                return (true, _translation.Get("purchase.free_model", player, model.DisplayName));
             }
 
             // 检查余额
@@ -306,7 +308,7 @@ public class ModelService : IModelService
 
             if (balance < model.Price)
             {
-                return (false, $"[PlayersModel] 余额不足! 需要: {model.Price} {walletKind}, 当前: {balance} {walletKind}");
+                return (false, _translation.Get("purchase.insufficient_funds", player, model.Price, walletKind, balance, walletKind));
             }
 
             // 扣除金额
@@ -316,14 +318,14 @@ public class ModelService : IModelService
             await _database.AddOwnedModelAsync(player.SteamID, modelId);
 
             var newBalance = _economyAPI.GetPlayerBalance(player, walletKind);
-            _logger.LogInformation($"玩家 {player.Controller.PlayerName} 购买模型 {model.DisplayName}, 花费 {model.Price} {walletKind}");
+            _logger.LogInformation(_translation.GetConsole("modelservice.purchased", player.Controller.PlayerName, model.DisplayName, model.Price, walletKind));
 
-            return (true, $"[PlayersModel] 成功购买 {model.DisplayName}! 剩余: {newBalance} {walletKind}");
+            return (true, _translation.Get("purchase.success", player, model.DisplayName, newBalance, walletKind));
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"购买模型失败: {modelId}");
-            return (false, "[PlayersModel] 购买失败,请联系管理员");
+            _logger.LogError(ex, _translation.GetConsole("modelservice.purchase_failed", modelId));
+            return (false, _translation.Get("purchase.failed", player));
         }
     }
 }

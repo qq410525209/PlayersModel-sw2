@@ -68,6 +68,10 @@
   // ========== Preview Service Messages ==========
   "preview.showing": "Player {0} previewing model: {1}",
   "preview.error": "Error previewing model: {0}",
+  "preview.entity_create_failed": "Failed to create preview entity",
+  "preview.entity_removed": "Preview entity removed, index: {0}",
+  "preview.entity_remove_failed": "Failed to remove preview entity",
+  "preview.old_entity_remove_failed": "Failed to remove old preview entity",
   
   // ========== Command Messages ==========
   "command.player_only": "This command can only be used by players!",

@@ -160,9 +160,16 @@ public class TranslationService : ITranslationService
     /// </summary>
     public string Get(string key, IPlayer? player = null)
     {
+        var configLanguage = _config.CurrentValue.Language;
+        
+        // 如果配置了语言，所有消息使用配置的语言
+        if (!string.IsNullOrEmpty(configLanguage))
+        {
+            return GetConsole(key);
+        }
+        
         if (player == null)
         {
-            // 如果没有指定玩家，使用控制台翻译
             return GetConsole(key);
         }
 
@@ -178,6 +185,14 @@ public class TranslationService : ITranslationService
     /// </summary>
     public string Get(string key, IPlayer? player, params object[] args)
     {
+        var configLanguage = _config.CurrentValue.Language;
+        
+        // 如果配置了语言，所有消息使用配置的语言
+        if (!string.IsNullOrEmpty(configLanguage))
+        {
+            return GetConsole(key, args);
+        }
+        
         if (player == null)
         {
             return GetConsole(key, args);

@@ -15,14 +15,16 @@ public class PreviewService : IPreviewService
 {
     private readonly ISwiftlyCore _core;
     private readonly ILogger<PreviewService> _logger;
+    private readonly ITranslationService _translation;
     
     // 跟踪每个玩家的预览实体
     private readonly Dictionary<ulong, uint> _playerPreviewEntities = new();
 
-    public PreviewService(ISwiftlyCore core, ILogger<PreviewService> logger)
+    public PreviewService(ISwiftlyCore core, ILogger<PreviewService> logger, ITranslationService translation)
     {
         _core = core;
         _logger = logger;
+        _translation = translation;
     }
 
     /// <summary>
@@ -47,7 +49,7 @@ public class PreviewService : IPreviewService
             var entity = _core.EntitySystem.CreateEntityByDesignerName<CBaseModelEntity>("prop_dynamic");
             if (entity == null || !entity.IsValid)
             {
-                _logger.LogWarning("无法创建预览实体");
+                _logger.LogWarning(_translation.GetConsole("preview.entity_create_failed"));
                 return;
             }
 
@@ -87,20 +89,20 @@ public class PreviewService : IPreviewService
                     {
                         previewEntity.AcceptInput("Kill", "", null, null, 0);
                         _playerPreviewEntities.Remove(player.SteamID);
-                        _logger.LogInformation($"预览实体已删除，索引: {entityIndex}");
+                        _logger.LogInformation(_translation.GetConsole("preview.entity_removed", entityIndex));
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogError(ex, "删除预览实体失败");
+                        _logger.LogError(ex, _translation.GetConsole("preview.entity_remove_failed"));
                     }
                 }
             });
 
-            _logger.LogInformation($"玩家 {player.Controller.PlayerName} 预览模型: {modelPath}");
+            _logger.LogInformation(_translation.GetConsole("preview.showing", player.Controller.PlayerName, modelPath));
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"预览模型时出错: {modelPath}");
+            _logger.LogError(ex, _translation.GetConsole("preview.error", modelPath));
         }
     }
 
@@ -120,7 +122,7 @@ public class PreviewService : IPreviewService
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "删除旧预览实体失败");
+                    _logger.LogWarning(ex, _translation.GetConsole("preview.old_entity_remove_failed"));
                 }
             }
             _playerPreviewEntities.Remove(steamId);

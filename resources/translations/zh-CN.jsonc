@@ -68,6 +68,10 @@
   // ========== 预览服务消息 ==========
   "preview.showing": "玩家 {0} 预览模型: {1}",
   "preview.error": "预览模型时出错: {0}",
+  "preview.entity_create_failed": "无法创建预览实体",
+  "preview.entity_removed": "预览实体已删除，索引: {0}",
+  "preview.entity_remove_failed": "删除预览实体失败",
+  "preview.old_entity_remove_failed": "删除旧预览实体失败",
   
   // ========== 命令消息 ==========
   "command.player_only": "此命令只能由玩家使用!",
