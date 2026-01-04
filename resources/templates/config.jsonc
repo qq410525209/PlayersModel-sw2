@@ -7,14 +7,14 @@
     // 调试模式 (显示详细日志)
     "Debug": false,
     
-    // 语言设置 (留空则使用玩家在框架中设置的语言)
+    // 语言设置 (留空则使用用户在框架中设置的语言?或者UsePlayerLanguage[未测试])
     // 可选值: "zh-CN" (简体中文), "en" (英文)
     "Language": "",
     
     // 是否启用模型购买系统 (需要 Economy 插件)
     "EnablePurchaseSystem": true,
     
-    // Economy 钱包类型economy&credits (用于购买模型)
+    // Economy 钱包货币类型economy&credits (用于购买模型)
     "WalletKind": "credits",
     
     // 装备模型后是否立即生效 (true=立即生效，false=下次重生生效)
