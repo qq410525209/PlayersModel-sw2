@@ -146,6 +146,7 @@
   "model.vip_only": "This model is VIP only",
   "model.not_found": "Model {0} not found",
   "model.unequipped": "Player {0} unequipped model, restored {1} default model",
+  "model.team": "Team",
   
   // ========== Permission Messages ==========
   "permission.required": "Required permission: {0}",

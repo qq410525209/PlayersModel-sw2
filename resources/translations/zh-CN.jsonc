@@ -146,6 +146,7 @@
   "model.vip_only": "此模型仅限 VIP 使用",
   "model.not_found": "模型 {0} 不存在",
   "model.unequipped": "玩家 {0} 卸载模型，恢复{1}默认模型",
+  "model.team": "阵营",
   
   // ========== 权限消息 ==========
   "permission.required": "需要权限: {0}",

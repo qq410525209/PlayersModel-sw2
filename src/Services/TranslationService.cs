@@ -13,6 +13,11 @@ namespace PlayersModel.Services;
 public interface ITranslationService
 {
     /// <summary>
+    /// 索引器 - 用于简化访问翻译
+    /// </summary>
+    string this[string key] { get; }
+    
+    /// <summary>
     /// 获取翻译文本（用于玩家消息）
     /// </summary>
     string Get(string key, IPlayer? player = null);
@@ -107,6 +112,14 @@ public class TranslationService : ITranslationService
         }
     }
 
+    /// <summary>
+    /// 索引器实现 - 简化翻译访问
+    /// </summary>
+    public string this[string key]
+    {
+        get => GetConsole(key);
+    }
+    
     /// <summary>
     /// 获取控制台消息翻译
     /// </summary>

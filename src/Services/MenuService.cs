@@ -23,6 +23,25 @@ public class MenuService : IMenuService
     private readonly IPreviewService _previewService;
     private readonly ILogger<MenuService> _logger;
 
+    // 菜单标题属性 - 使用索引器简化访问
+    public string MenuTitle => _translation["menu.main.title"];
+    public string MenuTitleCT => _translation["menu.ct_models.title"];
+    public string MenuTitleT => _translation["menu.t_models.title"];
+    public string MenuTitleAll => _translation["menu.all_models.title"];
+    public string MenuTitleOwned => _translation["menu.owned_models.title"];
+    
+    // 菜单选项属性
+    public string OptionCT => _translation["menu.option.ct_models"];
+    public string OptionT => _translation["menu.option.t_models"];
+    public string OptionAll => _translation["menu.option.all_models"];
+    public string OptionOwned => _translation["menu.option.owned_models"];
+    public string OptionNoModels => _translation["menu.option.no_models"];
+    public string OptionPreview => _translation["menu.option.preview"];
+    public string OptionEquip => _translation["menu.option.equip_model"];
+    public string OptionUnequip => _translation["menu.option.unequip_model"];
+    public string OptionEquipped => _translation["menu.option.equipped"];
+    public string OptionOwned2 => _translation["menu.option.owned"];
+
     public MenuService(
         ISwiftlyCore core,
         IOptionsMonitor<PluginConfig> config,
@@ -48,29 +67,29 @@ public class MenuService : IMenuService
         var builder = _core.MenusAPI
             .CreateBuilder()
             .SetPlayerFrozen(menuConfig.FreezePlayer)
-            .Design.SetMenuTitle(_translation.Get("menu.main.title", player))
+            .Design.SetMenuTitle(MenuTitle)
             .Design.SetMaxVisibleItems(menuConfig.ItemsPerPage);
 
         if (menuConfig.EnableSound) builder.EnableSound();
         if (menuConfig.AutoCloseDelay > 0) builder.SetAutoCloseDelay(menuConfig.AutoCloseDelay);
 
         // 通用模型
-        var allButton = new ButtonMenuOption(_translation.Get("menu.option.all_models", player));
+        var allButton = new ButtonMenuOption(OptionAll);
         allButton.Click += async (sender, args) => OpenModelCategoryMenu(args.Player!, "All");
         builder.AddOption(allButton);
 
         // CT模型
-        var ctButton = new ButtonMenuOption(_translation.Get("menu.option.ct_models", player));
+        var ctButton = new ButtonMenuOption(OptionCT);
         ctButton.Click += async (sender, args) => OpenModelCategoryMenu(args.Player!, "CT");
         builder.AddOption(ctButton);
 
         // T模型  
-        var tButton = new ButtonMenuOption(_translation.Get("menu.option.t_models", player));
+        var tButton = new ButtonMenuOption(OptionT);
         tButton.Click += async (sender, args) => OpenModelCategoryMenu(args.Player!, "T");
         builder.AddOption(tButton);
 
         // 我的模型
-        var myModelsButton = new ButtonMenuOption(_translation.Get("menu.option.owned_models", player));
+        var myModelsButton = new ButtonMenuOption(OptionOwned);
         myModelsButton.Click += async (sender, args) => await OpenOwnedModelsMenuAsync(args.Player!);
         builder.AddOption(myModelsButton);
 
@@ -83,10 +102,10 @@ public class MenuService : IMenuService
         
         var title = team.ToLower() switch
         {
-            "ct" => _translation.Get("menu.ct_models.title", player),
-            "t" => _translation.Get("menu.t_models.title", player),
-            "all" => _translation.Get("menu.all_models.title", player),
-            _ => _translation.Get("menu.main.title", player)
+            "ct" => MenuTitleCT,
+            "t" => MenuTitleT,
+            "all" => MenuTitleAll,
+            _ => MenuTitle
         };
         
         var builder = _core.MenusAPI
@@ -115,7 +134,7 @@ public class MenuService : IMenuService
 
         var builder = _core.MenusAPI
             .CreateBuilder()
-            .Design.SetMenuTitle(_translation.Get("menu.owned_models.title", player))
+            .Design.SetMenuTitle(MenuTitleOwned)
             .Design.SetMaxVisibleItems(menuConfig.ItemsPerPage);
 
         if (parentMenu != null) builder.BindToParent(parentMenu);
@@ -125,7 +144,7 @@ public class MenuService : IMenuService
 
         if (ownedModelIds.Count == 0)
         {
-            builder.AddOption(new TextMenuOption(_translation.Get("menu.option.no_models", player)));
+            builder.AddOption(new TextMenuOption(OptionNoModels));
         }
         else
         {
@@ -160,7 +179,7 @@ public class MenuService : IMenuService
 
         // 模型信息
         builder.AddOption(new TextMenuOption(model.Description));
-        builder.AddOption(new TextMenuOption($"{_translation.Get("model.team", player)}: {model.Team}"));
+        builder.AddOption(new TextMenuOption($"{_translation["model.team"]}: {model.Team}"));
         
         var owns = await _databaseService.PlayerOwnsModelAsync(player.SteamID, modelId);
         var currentModel = await _databaseService.GetPlayerCurrentModelAsync(player.SteamID);
@@ -168,21 +187,19 @@ public class MenuService : IMenuService
         
         if (owns)
         {
-            var statusText = isEquipped 
-                ? _translation.Get("menu.option.equipped", player)
-                : _translation.Get("menu.option.owned", player);
+            var statusText = isEquipped ? OptionEquipped : OptionOwned2;
             builder.AddOption(new TextMenuOption(statusText));
         }
 
         // 预览按钮
-        var previewButton = new ButtonMenuOption(_translation.Get("menu.option.preview", player));
+        var previewButton = new ButtonMenuOption(OptionPreview);
         previewButton.Click += async (sender, args) => _previewService.ShowPreview(args.Player!, model.ModelPath);
         builder.AddOption(previewButton);
 
         // 根据状态显示不同按钮
         if (isEquipped)
         {
-            var unequipButton = new ButtonMenuOption(_translation.Get("menu.option.unequip_model", player));
+            var unequipButton = new ButtonMenuOption(OptionUnequip);
             unequipButton.Click += async (sender, args) =>
             {
                 await UnequipModelAsync(args.Player!, model.Team);
@@ -192,7 +209,7 @@ public class MenuService : IMenuService
         }
         else if (owns || model.Price == 0)
         {
-            var equipButton = new ButtonMenuOption(_translation.Get("menu.option.equip_model", player));
+            var equipButton = new ButtonMenuOption(OptionEquip);
             equipButton.Click += async (sender, args) =>
             {
                 var success = _modelService.ApplyModelToPlayer(args.Player!, modelId);
@@ -207,7 +224,8 @@ public class MenuService : IMenuService
         else
         {
             var walletKind = _config.CurrentValue.WalletKind;
-            var buyButton = new ButtonMenuOption(_translation.Get("menu.option.buy_model", player, $"{model.Price} {walletKind}"));
+            var buyText = string.Format(_translation["menu.option.buy_model"], $"{model.Price} {walletKind}");
+            var buyButton = new ButtonMenuOption(buyText);
             buyButton.Click += async (sender, args) =>
             {
                 var (success, message) = await _modelService.PurchaseModelAsync(args.Player!, modelId);
