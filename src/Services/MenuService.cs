@@ -73,30 +73,16 @@ public class MenuService : IMenuService
         if (menuConfig.EnableSound) builder.EnableSound();
         if (menuConfig.AutoCloseDelay > 0) builder.SetAutoCloseDelay(menuConfig.AutoCloseDelay);
 
-        // 通用模型
-        var allButton = new ButtonMenuOption(OptionAll);
-        allButton.Click += async (sender, args) => OpenModelCategoryMenu(args.Player!, "All");
-        builder.AddOption(allButton);
-
-        // CT模型
-        var ctButton = new ButtonMenuOption(OptionCT);
-        ctButton.Click += async (sender, args) => OpenModelCategoryMenu(args.Player!, "CT");
-        builder.AddOption(ctButton);
-
-        // T模型  
-        var tButton = new ButtonMenuOption(OptionT);
-        tButton.Click += async (sender, args) => OpenModelCategoryMenu(args.Player!, "T");
-        builder.AddOption(tButton);
-
-        // 我的模型
-        var myModelsButton = new ButtonMenuOption(OptionOwned);
-        myModelsButton.Click += async (sender, args) => await OpenOwnedModelsMenuAsync(args.Player!);
-        builder.AddOption(myModelsButton);
+        // 使用SubmenuMenuOption - 框架自动处理返回
+        builder.AddOption(new SubmenuMenuOption(OptionAll, () => Task.FromResult(BuildModelCategoryMenu(player, "All"))));
+        builder.AddOption(new SubmenuMenuOption(OptionCT, () => Task.FromResult(BuildModelCategoryMenu(player, "CT"))));
+        builder.AddOption(new SubmenuMenuOption(OptionT, () => Task.FromResult(BuildModelCategoryMenu(player, "T"))));
+        builder.AddOption(new SubmenuMenuOption(OptionOwned, () => BuildOwnedModelsMenuAsync(player)));
 
         _core.MenusAPI.OpenMenuForPlayer(player, builder.Build());
     }
 
-    private void OpenModelCategoryMenu(IPlayer player, string team, IMenuAPI? parentMenu = null)
+    private IMenuAPI BuildModelCategoryMenu(IPlayer player, string team)
     {
         var menuConfig = _config.CurrentValue.Menu;
         
@@ -113,22 +99,20 @@ public class MenuService : IMenuService
             .Design.SetMenuTitle(title)
             .Design.SetMaxVisibleItems(menuConfig.ItemsPerPage);
 
-        if (parentMenu != null) builder.BindToParent(parentMenu);
         if (menuConfig.EnableSound) builder.EnableSound();
 
         var models = _modelService.GetAvailableModelsForPlayer(player, team);
         foreach (var model in models)
         {
-            var button = new ButtonMenuOption(model.DisplayName);
             var capturedId = model.ModelId;
-            button.Click += async (sender, args) => await OpenModelDetailMenuAsync(args.Player!, capturedId);
-            builder.AddOption(button);
+            // 子菜单：使用SubmenuMenuOption自动处理返回
+            builder.AddOption(new SubmenuMenuOption(model.DisplayName, () => BuildModelDetailMenuAsync(player, capturedId)));
         }
 
-        _core.MenusAPI.OpenMenuForPlayer(player, builder.Build());
+        return builder.Build();
     }
 
-    private async Task OpenOwnedModelsMenuAsync(IPlayer player, IMenuAPI? parentMenu = null)
+    private async Task<IMenuAPI> BuildOwnedModelsMenuAsync(IPlayer player)
     {
         var menuConfig = _config.CurrentValue.Menu;
 
@@ -137,7 +121,6 @@ public class MenuService : IMenuService
             .Design.SetMenuTitle(MenuTitleOwned)
             .Design.SetMaxVisibleItems(menuConfig.ItemsPerPage);
 
-        if (parentMenu != null) builder.BindToParent(parentMenu);
         if (menuConfig.EnableSound) builder.EnableSound();
 
         var ownedModelIds = await _databaseService.GetPlayerOwnedModelsAsync(player.SteamID);
@@ -153,28 +136,33 @@ public class MenuService : IMenuService
                 var model = _modelService.GetModelById(modelId);
                 if (model == null) continue;
 
-                var button = new ButtonMenuOption($"✓ {model.DisplayName}");
                 var capturedId = modelId;
-                button.Click += async (sender, args) => await OpenModelDetailMenuAsync(args.Player!, capturedId);
-                builder.AddOption(button);
+                // 子菜单：使用SubmenuMenuOption自动处理返回
+                builder.AddOption(new SubmenuMenuOption($"✓ {model.DisplayName}", () => BuildModelDetailMenuAsync(player, capturedId)));
             }
         }
 
-        _core.MenusAPI.OpenMenuForPlayer(player, builder.Build());
+        return builder.Build();
     }
 
-    private async Task OpenModelDetailMenuAsync(IPlayer player, string modelId, IMenuAPI? parentMenu = null)
+    private async Task<IMenuAPI> BuildModelDetailMenuAsync(IPlayer player, string modelId)
     {
         var menuConfig = _config.CurrentValue.Menu;
         var model = _modelService.GetModelById(modelId);
-        if (model == null) return;
+        if (model == null) 
+        {
+            // 返回空菜单或错误菜单
+            var errorBuilder = _core.MenusAPI.CreateBuilder();
+            errorBuilder.Design.SetMenuTitle("Error");
+            errorBuilder.AddOption(new TextMenuOption("Model not found"));
+            return errorBuilder.Build();
+        }
 
         var builder = _core.MenusAPI
             .CreateBuilder()
             .Design.SetMenuTitle($"📦 {model.DisplayName}")
             .Design.SetMaxVisibleItems(menuConfig.ItemsPerPage);
 
-        if (parentMenu != null) builder.BindToParent(parentMenu);
         if (menuConfig.EnableSound) builder.EnableSound();
 
         // 模型信息
@@ -191,19 +179,21 @@ public class MenuService : IMenuService
             builder.AddOption(new TextMenuOption(statusText));
         }
 
-        // 预览按钮
+        // 预览按钮 - 动作按钮，不是子菜单
         var previewButton = new ButtonMenuOption(OptionPreview);
         previewButton.Click += async (sender, args) => _previewService.ShowPreview(args.Player!, model.ModelPath);
         builder.AddOption(previewButton);
 
-        // 根据状态显示不同按钮
+        // 根据状态显示不同按钮 - 动作按钮，不是子菜单
         if (isEquipped)
         {
             var unequipButton = new ButtonMenuOption(OptionUnequip);
             unequipButton.Click += async (sender, args) =>
             {
                 await UnequipModelAsync(args.Player!, model.Team);
-                await OpenModelDetailMenuAsync(args.Player!, modelId, parentMenu);
+                // 刷新当前菜单
+                var refreshedMenu = await BuildModelDetailMenuAsync(args.Player!, modelId);
+                _core.MenusAPI.OpenMenuForPlayer(args.Player!, refreshedMenu);
             };
             builder.AddOption(unequipButton);
         }
@@ -216,7 +206,9 @@ public class MenuService : IMenuService
                 if (success)
                 {
                     _logger.LogInformation(_translation.GetConsole("menuservice.player_equipped", args.Player!.Controller.PlayerName, model.DisplayName));
-                    await OpenModelDetailMenuAsync(args.Player!, modelId, parentMenu);
+                    // 刷新当前菜单
+                    var refreshedMenu = await BuildModelDetailMenuAsync(args.Player!, modelId);
+                    _core.MenusAPI.OpenMenuForPlayer(args.Player!, refreshedMenu);
                 }
             };
             builder.AddOption(equipButton);
@@ -230,12 +222,17 @@ public class MenuService : IMenuService
             {
                 var (success, message) = await _modelService.PurchaseModelAsync(args.Player!, modelId);
                 _logger.LogInformation($"{message}");
-                if (success) await OpenModelDetailMenuAsync(args.Player!, modelId, parentMenu);
+                if (success)
+                {
+                    // 刷新当前菜单
+                    var refreshedMenu = await BuildModelDetailMenuAsync(args.Player!, modelId);
+                    _core.MenusAPI.OpenMenuForPlayer(args.Player!, refreshedMenu);
+                }
             };
             builder.AddOption(buyButton);
         }
 
-        _core.MenusAPI.OpenMenuForPlayer(player, builder.Build());
+        return builder.Build();
     }
 
     private async Task UnequipModelAsync(IPlayer player, string team)

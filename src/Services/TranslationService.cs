@@ -87,7 +87,7 @@ public class TranslationService : ITranslationService
             _currentLanguage = language;
             
             // 加载翻译文件
-            var translationPath = Path.Combine("translations", $"{language}.jsonc");
+            var translationPath = Path.Combine(_core.PluginPath, "translations", $"{language}.jsonc");
             
             if (File.Exists(translationPath))
             {
