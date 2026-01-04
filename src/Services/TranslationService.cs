@@ -41,6 +41,12 @@ public interface ITranslationService
     /// 获取玩家的本地化器
     /// </summary>
     ILocalizer GetPlayerLocalizer(IPlayer player);
+
+    /// <summary>
+    /// 重新加载翻译文件
+    /// </summary>
+    void Reload();
+
 }
 
 /// <summary>
@@ -59,6 +65,15 @@ public class TranslationService : ITranslationService
     {
         _core = core;
         _config = config;
+        LoadConsoleTranslations();
+    }
+
+    /// <summary>
+    /// 重新加载翻译文件
+    /// </summary>
+    public void Reload()
+    {
+        Console.WriteLine("[PlayersModel] Reloading translations...");
         LoadConsoleTranslations();
     }
 
