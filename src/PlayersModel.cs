@@ -95,21 +95,7 @@ namespace PlayersModel
 
                 Console.WriteLine($"{PluginPrefix} {_translationService?.GetConsole("plugin.loaded") ?? "Plugin loaded successfully!"}");
                 
-                // 延迟初始化经济系统（确保Economy插件已加载）
-                Core.Scheduler.DelayBySeconds(1.0f, () =>
-                {
-                    Console.WriteLine($"{PluginPrefix} {_translationService?.GetConsole("system.economy_delayed_init") ?? "Delayed initialization of Economy system..."}");
-                    
-                    // 重新尝试获取经济API
-                    if (_economyAPI == null && _interfaceManager != null && _interfaceManager.HasSharedInterface("Economy.API.v1"))
-                    {
-                        _economyAPI = _interfaceManager.GetSharedInterface<IEconomyAPIv1>("Economy.API.v1");
-                        Console.WriteLine($"{PluginPrefix} {_translationService?.GetConsole("system.economy_delayed_success") ?? "Successfully connected to Economy system (delayed)!"}");
-                    }
-                    
-                    // 重新初始化经济系统
-                    InitializeEconomy();
-                });
+                // Economy将在地图加载时连接（见Events.cs中的OnMapLoaded事件）
             }
             catch (Exception ex)
             {
@@ -188,7 +174,7 @@ namespace PlayersModel
         /// <summary>
         /// 初始化经济系统
         /// </summary>
-        private void InitializeEconomy()
+        public void InitializeEconomy()
         {
             if (_economyAPI != null && _modelService != null)
             {

@@ -87,21 +87,31 @@ public class TranslationService : ITranslationService
             _currentLanguage = language;
             
             // 加载翻译文件
-            var translationPath = Path.Combine(_core.PluginPath, "translations", $"{language}.jsonc");
+            var translationPath = Path.Combine(_core.PluginPath, "resources", "translations", $"{language}.jsonc");
             
             if (File.Exists(translationPath))
             {
                 var jsonContent = File.ReadAllText(translationPath);
-                // 移除JSONC注释（简单处理）
-                var lines = jsonContent.Split('\n');
-                var cleanedLines = lines.Where(line => !line.TrimStart().StartsWith("//")).ToArray();
-                var cleanedJson = string.Join("\n", cleanedLines);
                 
-                _consoleTranslations = JsonSerializer.Deserialize<Dictionary<string, string>>(cleanedJson);
+                // 使用JsonSerializerOptions支持JSON注释
+                var options = new JsonSerializerOptions
+                {
+                    ReadCommentHandling = JsonCommentHandling.Skip,
+                    AllowTrailingCommas = true
+                };
+                
+                _consoleTranslations = JsonSerializer.Deserialize<Dictionary<string, string>>(jsonContent, options);
+                
+                Console.WriteLine($"[PlayersModel] ✅ Translation file loaded: {translationPath}");
+                Console.WriteLine($"[PlayersModel] Translation loaded: {language}, Keys count: {_consoleTranslations?.Count ?? 0}");
+                if (_consoleTranslations?.Count > 0)
+                {
+                    Console.WriteLine($"[PlayersModel] First few keys: {string.Join(", ", _consoleTranslations.Keys.Take(5))}");
+                }
             }
             else
             {
-                Console.WriteLine($"[PlayersModel] Warning: Translation file not found: {translationPath}");
+                Console.WriteLine($"[PlayersModel] ❌ Translation file not found: {translationPath}");
                 _consoleTranslations = new Dictionary<string, string>();
             }
         }
@@ -127,6 +137,14 @@ public class TranslationService : ITranslationService
     {
         if (_consoleTranslations == null || !_consoleTranslations.ContainsKey(key))
         {
+            if (_consoleTranslations == null)
+            {
+                Console.WriteLine($"[PlayersModel] ⚠ Translation dict is NULL when looking for key: {key}");
+            }
+            else
+            {
+                Console.WriteLine($"[PlayersModel] ⚠ Key not found: {key}, Available keys: {_consoleTranslations.Count}");
+            }
             return key; // 如果找不到翻译，返回键名
         }
         

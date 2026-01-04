@@ -24,7 +24,15 @@ public class MenuService : IMenuService
     private readonly ILogger<MenuService> _logger;
 
     // 菜单标题属性 - 使用索引器简化访问
-    public string MenuTitle => _translation["menu.main.title"];
+    public string MenuTitle
+    {
+        get
+        {
+            var result = _translation["menu.main.title"];
+            Console.WriteLine($"[MenuService DEBUG] MenuTitle getter called, result: '{result}'");
+            return result;
+        }
+    }
     public string MenuTitleCT => _translation["menu.ct_models.title"];
     public string MenuTitleT => _translation["menu.t_models.title"];
     public string MenuTitleAll => _translation["menu.all_models.title"];

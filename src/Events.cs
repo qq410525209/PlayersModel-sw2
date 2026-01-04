@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using SwiftlyS2.Shared.GameEventDefinitions;
 using SwiftlyS2.Shared.GameEvents;
+using Economy.Contract;
 
 namespace PlayersModel;
 
@@ -11,6 +12,25 @@ public partial class PlayersModel
 {
     private void InitializeEvents()
     {
+        // 地图加载事件 - 在此时初始化Economy（确保所有插件都已加载）
+        Core.Event.OnMapLoad += (@event) =>
+        {
+            Console.WriteLine($"{PluginPrefix} {_translationService?.GetConsole("system.economy_delayed_init") ?? "Initializing Economy on map load..."}");
+            
+            // 尝试获取Economy API
+            if (_economyAPI == null && _interfaceManager != null)
+            {
+                if (_interfaceManager.HasSharedInterface("Economy.API.v1"))
+                {
+                    _economyAPI = _interfaceManager.GetSharedInterface<IEconomyAPIv1>("Economy.API.v1");
+                    Console.WriteLine($"{PluginPrefix} {_translationService?.GetConsole("system.economy_delayed_success") ?? "✓ Successfully connected to Economy system on map load!"}");
+                }
+            }
+            
+            // 初始化或重新初始化Economy
+            InitializeEconomy();
+        };
+
         // 预缓存资源事件
         Core.Event.OnPrecacheResource += (@event) =>
         {
