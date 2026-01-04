@@ -94,7 +94,7 @@ public class PreviewService : IPreviewService
 
                 if (playera.Controller.PlayerPawn.Value == null || !playera.Controller.PlayerPawn.IsValid) continue;
 
-                if(iplayer.SteamID == playera.SteamID) continue;
+                if(player.SteamID == playera.SteamID) continue;
 
                 entity.SetTransmitState(false, playera.PlayerID);
 
