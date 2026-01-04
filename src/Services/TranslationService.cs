@@ -73,7 +73,7 @@ public class TranslationService : ITranslationService
     /// </summary>
     public void Reload()
     {
-        Console.WriteLine("[PlayersModel] Reloading translations...");
+        Console.WriteLine("Reloading translations...");
         LoadConsoleTranslations();
     }
 
@@ -117,22 +117,22 @@ public class TranslationService : ITranslationService
                 
                 _consoleTranslations = JsonSerializer.Deserialize<Dictionary<string, string>>(jsonContent, options);
                 
-                Console.WriteLine($"[PlayersModel] ✅ Translation file loaded: {translationPath}");
-                Console.WriteLine($"[PlayersModel] Translation loaded: {language}, Keys count: {_consoleTranslations?.Count ?? 0}");
+                // 翻译已加载，可以使用GetConsole了
+                Console.WriteLine(GetConsole("system.translation_loaded", language, _consoleTranslations?.Count ?? 0));
                 if (_consoleTranslations?.Count > 0)
                 {
-                    Console.WriteLine($"[PlayersModel] First few keys: {string.Join(", ", _consoleTranslations.Keys.Take(5))}");
+                    // 已加载翻译文件
                 }
             }
             else
             {
-                Console.WriteLine($"[PlayersModel] ❌ Translation file not found: {translationPath}");
+                Console.WriteLine($"Translation file not found: {translationPath}");
                 _consoleTranslations = new Dictionary<string, string>();
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[PlayersModel] Error loading translations: {ex.Message}");
+            Console.WriteLine($"Error loading translations: {ex.Message}");
             _consoleTranslations = new Dictionary<string, string>();
         }
     }
@@ -154,11 +154,11 @@ public class TranslationService : ITranslationService
         {
             if (_consoleTranslations == null)
             {
-                Console.WriteLine($"[PlayersModel] ⚠ Translation dict is NULL when looking for key: {key}");
+                // 翻译字典为空
             }
             else
             {
-                Console.WriteLine($"[PlayersModel] ⚠ Key not found: {key}, Available keys: {_consoleTranslations.Count}");
+                // 翻译键不存在
             }
             return key; // 如果找不到翻译，返回键名
         }

@@ -12,7 +12,7 @@ namespace PlayersModel
 {
     [PluginMetadata(
         Id = "PlayersModel", 
-        Version = "1.0.0", 
+        Version = "1.0.4", 
         Name = "PlayersModel", 
         Author = "小彩旗", 
         Description = "Player Model Plugins with Economy Integration"

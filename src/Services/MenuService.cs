@@ -132,7 +132,10 @@ public class MenuService : IMenuService
         if (menuConfig.EnableSound) builder.EnableSound();
 
         // 获取玩家当前装备的模型
-        var currentModel = await _databaseService.GetPlayerCurrentModelAsync(player.SteamID);
+        var currentTeam = player.Controller.TeamNum;
+        var teamName = currentTeam == 2 ? "T" : currentTeam == 3 ? "CT" : "";
+        if (string.IsNullOrEmpty(teamName)) teamName = "T"; // 默认T阵营
+        var currentModel = await _databaseService.GetPlayerCurrentModelAsync(player.SteamID, teamName);
         
         var ownedModelIds = await _databaseService.GetPlayerOwnedModelsAsync(player.SteamID);
 
@@ -185,7 +188,10 @@ public class MenuService : IMenuService
         builder.AddOption(new TextMenuOption($"{_translation["model.team"]}: {model.Team}"));
         
         var owns = await _databaseService.PlayerOwnsModelAsync(player.SteamID, modelId);
-        var currentModel = await _databaseService.GetPlayerCurrentModelAsync(player.SteamID);
+        var currentTeam = player.Controller.TeamNum;
+        var teamName = currentTeam == 2 ? "T" : currentTeam == 3 ? "CT" : "";
+        if (string.IsNullOrEmpty(teamName)) teamName = "T"; // 默认T阵营  
+        var currentModel = await _databaseService.GetPlayerCurrentModelAsync(player.SteamID, teamName);
         bool isEquipped = currentModel.modelPath == model.ModelPath;
         
         if (owns)

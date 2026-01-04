@@ -341,9 +341,12 @@ public partial class PlayersModel
 
         try
         {
+            // 重新加载翻译
+            _translationService?.Reload();
+            
             // 重新加载模型配置
             _modelService?.LoadModels();
-            context.Reply($"{PluginPrefix} {_translationService?.GetConsole("admin.reload.success") ?? "Configuration reloaded"}");
+            context.Reply($"{PluginPrefix} {_translationService?.GetConsole("admin.reload.success") ?? "Configuration and translations reloaded"}");
         }
         catch (Exception ex)
         {

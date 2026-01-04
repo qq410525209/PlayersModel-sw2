@@ -79,8 +79,13 @@ public class PreviewService : IPreviewService
 
             // 生成后立即设置模型
             entity.SetModel(modelPath);
-            
 
+            // 设置传输状态：先全局禁用，然后只对预览者启用
+            entity.SetTransmitState(false);  // 全局禁用传输
+            var playerId = player.Slot;  // 获取预览者的Slot（玩家ID）
+            entity.SetTransmitState(true, playerId);  // 只对预览者启用传输
+
+            
             // 设置辉光效果（轮廓）
             if (entity.Glow != null)
             {

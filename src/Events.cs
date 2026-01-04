@@ -75,7 +75,7 @@ public partial class PlayersModel
                     
                     if (string.IsNullOrEmpty(teamName)) return; // 不在T或CT队伍
                     
-                    var modelData = _databaseService.GetPlayerCurrentModelAsync(player.SteamID).GetAwaiter().GetResult();
+                    var modelData = _databaseService.GetPlayerCurrentModelAsync(player.SteamID, teamName).GetAwaiter().GetResult();
                     
                     string modelPathToApply = "";
                     
@@ -141,7 +141,7 @@ public partial class PlayersModel
                     
                     if (string.IsNullOrEmpty(teamName)) return; // 不在T或CT队伍
                     
-                    var modelData = _databaseService.GetPlayerCurrentModelAsync(player.SteamID).GetAwaiter().GetResult();
+                    var modelData = _databaseService.GetPlayerCurrentModelAsync(player.SteamID, teamName).GetAwaiter().GetResult();
                     
                     string modelPathToApply = "";
                     
@@ -217,7 +217,7 @@ public partial class PlayersModel
                         
                         if (string.IsNullOrEmpty(teamName)) continue; // 不在T或CT队伍
                         
-                        var modelData = _databaseService.GetPlayerCurrentModelAsync(player.SteamID).GetAwaiter().GetResult();
+                        var modelData = _databaseService.GetPlayerCurrentModelAsync(player.SteamID, teamName).GetAwaiter().GetResult();
                         
                         string modelPathToApply = "";
                         

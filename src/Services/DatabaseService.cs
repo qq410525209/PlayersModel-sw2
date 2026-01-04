@@ -35,7 +35,7 @@ public interface IDatabaseService
     /// <summary>
     /// 获取玩家当前装备的模型
     /// </summary>
-    Task<(string? modelPath, string? armsPath)> GetPlayerCurrentModelAsync(ulong steamId);
+    Task<(string? modelPath, string? armsPath)> GetPlayerCurrentModelAsync(ulong steamId, string team);
 
     /// <summary>
     /// 设置玩家当前装备的模型
@@ -126,7 +126,7 @@ public class DatabaseService : IDatabaseService
             // 创建玩家当前装备的模型表（优化版）
             var createCurrentModelsTable = $@"
                 CREATE TABLE IF NOT EXISTS {CurrentModelsTable} (
-                    steam_id BIGINT PRIMARY KEY,
+                    steam_id BIGINT NOT NULL,
                     player_name VARCHAR(64),
                     model_id VARCHAR(128),
                     model_path VARCHAR(255),
@@ -134,6 +134,7 @@ public class DatabaseService : IDatabaseService
                     team VARCHAR(8),
                     usage_count INT DEFAULT 0,
                     equipped_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    PRIMARY KEY (steam_id, team),
                     INDEX idx_model_id (model_id),
                     INDEX idx_team (team)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -276,7 +277,7 @@ public class DatabaseService : IDatabaseService
     /// <summary>
     /// 获取玩家当前装备的模型
     /// </summary>
-    public async Task<(string? modelPath, string? armsPath)> GetPlayerCurrentModelAsync(ulong steamId)
+    public async Task<(string? modelPath, string? armsPath)> GetPlayerCurrentModelAsync(ulong steamId, string team)
     {
         try
         {
@@ -284,9 +285,10 @@ public class DatabaseService : IDatabaseService
             var sql = $@"
                 SELECT model_path, arms_path FROM {CurrentModelsTable}
                 WHERE steam_id = @SteamId
+ AND team = @Team
             ";
 
-            var result = await connection.QueryFirstOrDefaultAsync<dynamic>(sql, new { SteamId = steamId });
+            var result = await connection.QueryFirstOrDefaultAsync<dynamic>(sql, new { SteamId = steamId, Team = team });
             
             if (result == null)
                 return (null, null);
