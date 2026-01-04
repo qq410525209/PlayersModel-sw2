@@ -131,11 +131,10 @@ public class MenuService : IMenuService
 
         if (menuConfig.EnableSound) builder.EnableSound();
 
-        // 获取玩家当前装备的模型
-        var currentTeam = player.Controller.TeamNum;
-        var teamName = currentTeam == 2 ? "T" : currentTeam == 3 ? "CT" : "";
-        if (string.IsNullOrEmpty(teamName)) teamName = "T"; // 默认T阵营
-        var currentModel = await _databaseService.GetPlayerCurrentModelAsync(player.SteamID, teamName);
+        // 获取All、CT和T三个槽位的装备模型
+        var currentModelAll = await _databaseService.GetPlayerCurrentModelAsync(player.SteamID, "All");
+        var currentModelCT = await _databaseService.GetPlayerCurrentModelAsync(player.SteamID, "CT");
+        var currentModelT = await _databaseService.GetPlayerCurrentModelAsync(player.SteamID, "T");
         
         var ownedModelIds = await _databaseService.GetPlayerOwnedModelsAsync(player.SteamID);
 
@@ -152,9 +151,22 @@ public class MenuService : IMenuService
 
                 var capturedId = modelId;
                 
-                // 检查是否是当前装备的模型
-                bool isEquipped = currentModel.modelPath == model.ModelPath;
-                var displayName = isEquipped ? $"✓ {model.DisplayName}" : $"  {model.DisplayName}";
+                // 检查是否在All、CT或T槽位装备了此模型
+                bool isEquippedAll = currentModelAll.modelPath == model.ModelPath;
+                bool isEquippedCT = currentModelCT.modelPath == model.ModelPath;
+                bool isEquippedT = currentModelT.modelPath == model.ModelPath;
+                
+                string displayName;
+                if (isEquippedAll)
+                    displayName = $"✓(All) {model.DisplayName}"; // All槽位装备
+                else if (isEquippedCT && isEquippedT)
+                    displayName = $"✓✓ {model.DisplayName}"; // CT和T都装备
+                else if (isEquippedCT)
+                    displayName = $"✓(CT) {model.DisplayName}"; // 只CT装备
+                else if (isEquippedT)
+                    displayName = $"✓(T) {model.DisplayName}"; // 只T装备
+                else
+                    displayName = $"  {model.DisplayName}"; // 未装备
                 
                 builder.AddOption(new SubmenuMenuOption(displayName, () => BuildModelDetailMenuAsync(player, capturedId)));
             }
@@ -188,10 +200,10 @@ public class MenuService : IMenuService
         builder.AddOption(new TextMenuOption($"{_translation["model.team"]}: {model.Team}"));
         
         var owns = await _databaseService.PlayerOwnsModelAsync(player.SteamID, modelId);
-        var currentTeam = player.Controller.TeamNum;
-        var teamName = currentTeam == 2 ? "T" : currentTeam == 3 ? "CT" : "";
-        if (string.IsNullOrEmpty(teamName)) teamName = "T"; // 默认T阵营  
-        var currentModel = await _databaseService.GetPlayerCurrentModelAsync(player.SteamID, teamName);
+        
+        // 根据模型的Team属性检查对应槽位的装备状态
+        // All类型模型检查All槽位，CT检查CT槽位，T检查T槽位
+        var currentModel = await _databaseService.GetPlayerCurrentModelAsync(player.SteamID, model.Team);
         bool isEquipped = currentModel.modelPath == model.ModelPath;
         
         if (owns)
@@ -208,19 +220,14 @@ public class MenuService : IMenuService
         };
         builder.AddOption(previewButton);
 
-        // 根据状态显示不同按钮 - ButtonMenuOption，执行后不关闭菜单
+        // 根据状态显示不同按钮 - ButtonMenuOption，操作完成后菜单保持打开
         if (isEquipped)
         {
             var unequipButton = new ButtonMenuOption(OptionUnequip);
             unequipButton.Click += async (sender, args) =>
             {
                 await UnequipModelAsync(args.Player!, model.Team);
-                // 刷新当前菜单以显示最新状态
-                var refreshedMenu = await BuildModelDetailMenuAsync(args.Player!, modelId);
-                _core.Scheduler.DelayBySeconds(0.05f, () => {
-                    _core.MenusAPI.OpenMenuForPlayer(args.Player!, refreshedMenu);
- // 直接打开新菜单会替换当前菜单
-                });
+                // 操作完成，用户可按返回键回到模型列表
             };
             builder.AddOption(unequipButton);
         }
@@ -233,13 +240,8 @@ public class MenuService : IMenuService
                 if (success)
                 {
                     _logger.LogInformation(_translation.GetConsole("menuservice.player_equipped", args.Player!.Controller.PlayerName, model.DisplayName));
-                    // 刷新当前菜单以显示最新状态
-                    var refreshedMenu = await BuildModelDetailMenuAsync(args.Player!, modelId);
-                    _core.Scheduler.DelayBySeconds(0.05f, () => {
-                        _core.MenusAPI.OpenMenuForPlayer(args.Player!, refreshedMenu);
- // 直接打开新菜单会替换当前菜单
-                    });
                 }
+                // 操作完成，用户可按返回键回到模型列表
             };
             builder.AddOption(equipButton);
         }
@@ -252,15 +254,7 @@ public class MenuService : IMenuService
             {
                 var (success, message) = await _modelService.PurchaseModelAsync(args.Player!, modelId);
                 _logger.LogInformation($"{message}");
-                if (success)
-                {
-                    // 购买成功后刷新菜单，显示装备选项
-                    var refreshedMenu = await BuildModelDetailMenuAsync(args.Player!, modelId);
-                    _core.Scheduler.DelayBySeconds(0.05f, () => {
-                        _core.MenusAPI.OpenMenuForPlayer(args.Player!, refreshedMenu);
- // 直接打开新菜单会替换当前菜单
-                    });
-                }
+                // 操作完成，用户可按返回键回到模型列表
             };
             builder.AddOption(buyButton);
         }
@@ -270,35 +264,39 @@ public class MenuService : IMenuService
 
     private async Task UnequipModelAsync(IPlayer player, string team)
     {
-        // 根据阵营获取默认模型路径
-        var defaultModelPath = team.ToLower() == "ct" 
+        // 根据模型类型卸载对应槽位
+        // All类型：只清除All槽位
+        // CT类型：只清除CT槽位
+        // T类型：只清除T槽位
+        var defaultModelPath = team.Equals("CT", StringComparison.OrdinalIgnoreCase)
             ? _config.CurrentValue.DefaultCTModelPath 
             : _config.CurrentValue.DefaultTModelPath;
-
-        // 设置为默认模型
-  
-        var teamName = team.ToLower() == "ct" ? "CT" : "T";
+        
         await _databaseService.SetPlayerCurrentModelAsync(
             player.SteamID,
             player.Controller.PlayerName,
-            "", // 默认模型，modelId为空
+            "",
             defaultModelPath,
             "",
-            teamName);
+            team);
         
-        // 应用默认模型到玩家
+        _logger.LogInformation(_translation.GetConsole("menuservice.player_unequipped", player.Controller.PlayerName, team));
+        
+        // 应用默认模型到玩家（如果玩家当前存在）
         if (player.Pawn?.IsValid == true)
         {
+            var currentTeam = player.Controller.TeamNum;
+            var defaultPath = currentTeam == 3 
+                ? _config.CurrentValue.DefaultCTModelPath 
+                : _config.CurrentValue.DefaultTModelPath;
             var pawn = player.Pawn;
             _core.Scheduler.DelayBySeconds(0.01f, () =>
             {
                 if (pawn?.IsValid == true)
                 {
-                    pawn.SetModel(defaultModelPath);
+                    pawn.SetModel(defaultPath);
                 }
             });
         }
-        
-        _logger.LogInformation(_translation.GetConsole("menuservice.player_unequipped", player.Controller.PlayerName, team));
     }
 }

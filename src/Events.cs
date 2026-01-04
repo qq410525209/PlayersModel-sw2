@@ -75,27 +75,26 @@ public partial class PlayersModel
                     
                     if (string.IsNullOrEmpty(teamName)) return; // 不在T或CT队伍
                     
-                    var modelData = _databaseService.GetPlayerCurrentModelAsync(player.SteamID, teamName).GetAwaiter().GetResult();
-                    
                     string modelPathToApply = "";
                     
-                    if (!string.IsNullOrEmpty(modelData.modelPath))
+                    // 优先级系统：All > CT/T
+                    // 1. 先检查All槽位
+                    var allModelData = _databaseService.GetPlayerCurrentModelAsync(player.SteamID, "All").GetAwaiter().GetResult();
+                    if (!string.IsNullOrEmpty(allModelData.modelPath))
                     {
-                        // 检查保存的模型是否适用于当前阵营
-                        var model = _modelService?.GetAllModels().FirstOrDefault(m => m.ModelPath == modelData.modelPath);
-                        
-                        if (model != null)
+                        modelPathToApply = allModelData.modelPath;
+                    }
+                    else
+                    {
+                        // 2. 如果All槽位没有，检查当前阵营槽位
+                        var teamModelData = _databaseService.GetPlayerCurrentModelAsync(player.SteamID, teamName).GetAwaiter().GetResult();
+                        if (!string.IsNullOrEmpty(teamModelData.modelPath))
                         {
-                            // 检查模型是否适用于当前阵营
-                            if (model.Team.Equals("All", StringComparison.OrdinalIgnoreCase) || 
-                                model.Team.Equals(teamName, StringComparison.OrdinalIgnoreCase))
-                            {
-                                modelPathToApply = modelData.modelPath;
-                            }
+                            modelPathToApply = teamModelData.modelPath;
                         }
                     }
                     
-                    // 如果没有合适的模型，使用阵营默认模型
+                    // 3. 如果都没有，使用阵营默认模型
                     if (string.IsNullOrEmpty(modelPathToApply))
                     {
                         var config = _serviceProvider?.GetService<IOptionsMonitor<PluginConfig>>();
@@ -141,27 +140,26 @@ public partial class PlayersModel
                     
                     if (string.IsNullOrEmpty(teamName)) return; // 不在T或CT队伍
                     
-                    var modelData = _databaseService.GetPlayerCurrentModelAsync(player.SteamID, teamName).GetAwaiter().GetResult();
-                    
                     string modelPathToApply = "";
                     
-                    if (!string.IsNullOrEmpty(modelData.modelPath))
+                    // 优先级系统：All > CT/T
+                    // 1. 先检查All槽位
+                    var allModelData = _databaseService.GetPlayerCurrentModelAsync(player.SteamID, "All").GetAwaiter().GetResult();
+                    if (!string.IsNullOrEmpty(allModelData.modelPath))
                     {
-                        // 检查保存的模型是否适用于当前阵营
-                        var model = _modelService?.GetAllModels().FirstOrDefault(m => m.ModelPath == modelData.modelPath);
-                        
-                        if (model != null)
+                        modelPathToApply = allModelData.modelPath;
+                    }
+                    else
+                    {
+                        // 2. 如果All槽位没有，检查当前阵营槽位
+                        var teamModelData = _databaseService.GetPlayerCurrentModelAsync(player.SteamID, teamName).GetAwaiter().GetResult();
+                        if (!string.IsNullOrEmpty(teamModelData.modelPath))
                         {
-                            // 检查模型是否适用于当前阵营
-                            if (model.Team.Equals("All", StringComparison.OrdinalIgnoreCase) || 
-                                model.Team.Equals(teamName, StringComparison.OrdinalIgnoreCase))
-                            {
-                                modelPathToApply = modelData.modelPath;
-                            }
+                            modelPathToApply = teamModelData.modelPath;
                         }
                     }
                     
-                    // 如果没有合适的模型，使用阵营默认模型
+                    // 3. 如果都没有，使用阵营默认模型
                     if (string.IsNullOrEmpty(modelPathToApply))
                     {
                         var config = _serviceProvider?.GetService<IOptionsMonitor<PluginConfig>>();
@@ -217,27 +215,26 @@ public partial class PlayersModel
                         
                         if (string.IsNullOrEmpty(teamName)) continue; // 不在T或CT队伍
                         
-                        var modelData = _databaseService.GetPlayerCurrentModelAsync(player.SteamID, teamName).GetAwaiter().GetResult();
-                        
                         string modelPathToApply = "";
                         
-                        if (!string.IsNullOrEmpty(modelData.modelPath))
+                        // 优先级系统：All > CT/T
+                        // 1. 先检查All槽位
+                        var allModelData = _databaseService.GetPlayerCurrentModelAsync(player.SteamID, "All").GetAwaiter().GetResult();
+                        if (!string.IsNullOrEmpty(allModelData.modelPath))
                         {
-                            // 检查保存的模型是否适用于当前阵营
-                            var model = _modelService?.GetAllModels().FirstOrDefault(m => m.ModelPath == modelData.modelPath);
-                            
-                            if (model != null)
+                            modelPathToApply = allModelData.modelPath;
+                        }
+                        else
+                        {
+                            // 2. 如果All槽位没有，检查当前阵营槽位
+                            var teamModelData = _databaseService.GetPlayerCurrentModelAsync(player.SteamID, teamName).GetAwaiter().GetResult();
+                            if (!string.IsNullOrEmpty(teamModelData.modelPath))
                             {
-                                // 检查模型是否适用于当前阵营
-                                if (model.Team.Equals("All", StringComparison.OrdinalIgnoreCase) || 
-                                    model.Team.Equals(teamName, StringComparison.OrdinalIgnoreCase))
-                                {
-                                    modelPathToApply = modelData.modelPath;
-                                }
+                                modelPathToApply = teamModelData.modelPath;
                             }
                         }
                         
-                        // 如果没有合适的模型，使用阵营默认模型
+                        // 3. 如果都没有，使用阵营默认模型
                         if (string.IsNullOrEmpty(modelPathToApply))
                         {
                             var config = _serviceProvider?.GetService<IOptionsMonitor<PluginConfig>>();

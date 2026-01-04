@@ -263,35 +263,19 @@ public class ModelService : IModelService
             }
             else
             {
-                _logger.LogInformation(_translation.GetConsole("modelservice.saved_for_later", player.Controller.PlayerName, model.DisplayName, teamName));
+                // 显示正确的目标阵营
+                var targetTeams = model.Team.Equals("All", StringComparison.OrdinalIgnoreCase) 
+                    ? "CT和T" : model.Team;
+                _logger.LogInformation(_translation.GetConsole("modelservice.saved_for_later", player.Controller.PlayerName, model.DisplayName, targetTeams));
             }
             
-            // 根据模型的Team属性决定保存到哪些阵营槽位
-            if (model.Team.Equals("All", StringComparison.OrdinalIgnoreCase))
-            {
-                // All类型模型：同时保存到CT和T两个槽位
-                _database.SetPlayerCurrentModelAsync(
-                    player.SteamID, 
-                    player.Controller.PlayerName, 
-                    modelId, model.ModelPath, model.ArmsPath, "CT").GetAwaiter().GetResult();
-                    
-                _database.SetPlayerCurrentModelAsync(
-                    player.SteamID, 
-                    player.Controller.PlayerName, 
-                    modelId, model.ModelPath, model.ArmsPath, "T").GetAwaiter().GetResult();
-                    
-                _logger.LogInformation(_translation.GetConsole("modelservice.saved_all_teams", player.Controller.PlayerName, model.DisplayName));
-            }
-            else
-            {
-                // CT或T类型模型：只保存到对应的阵营槽位
-                var targetTeam = model.Team; // 使用模型配置的Team，而不是玩家当前阵营
-                _database.SetPlayerCurrentModelAsync(
-                    player.SteamID, 
-                    player.Controller.PlayerName, 
-                    modelId, model.ModelPath, model.ArmsPath, targetTeam).GetAwaiter().GetResult();
-                    
-            }
+            // 根据模型的Team属性保存到对应槽位
+            // All类型保存到All槽位，CT保存到CT槽位，T保存到T槽位
+            var targetTeam = model.Team; // "All"、"CT" 或 "T"
+            _database.SetPlayerCurrentModelAsync(
+                player.SteamID, 
+                player.Controller.PlayerName, 
+                modelId, model.ModelPath, model.ArmsPath, targetTeam).GetAwaiter().GetResult();
 
             _logger.LogInformation(_translation.GetConsole("modelservice.applied", player.Controller.PlayerName, model.DisplayName));
             return true;
