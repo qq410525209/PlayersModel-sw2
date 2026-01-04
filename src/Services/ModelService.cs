@@ -239,6 +239,7 @@ public class ModelService : IModelService
             }
 
             // 保存玩家当前使用的模型
+            // 获取玩家当前阵营
             var currentTeam = player.Controller.TeamNum;
             var teamName = currentTeam == 2 ? "T" : currentTeam == 3 ? "CT" : "Unknown";
             

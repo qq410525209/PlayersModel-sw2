@@ -118,7 +118,7 @@
   "menu.option.all_models": "All Models",
   "menu.option.owned_models": "My Models",
   "menu.option.vip_models": "VIP Models",
-  "menu.option.buy_model": "💰 Buy ({0} credits)",
+  "menu.option.buy_model": "💰 Buy {0}",
   "menu.option.equip_model": "✅ Equip Model",
   "menu.option.unequip_model": "❌ Unequip Model",
   "menu.option.equipped": "✅ Equipped",

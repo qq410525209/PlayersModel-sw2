@@ -118,7 +118,7 @@
   "menu.option.all_models": "通用模型",
   "menu.option.owned_models": "我的模型",
   "menu.option.vip_models": "VIP 模型",
-  "menu.option.buy_model": "💰 购买 ({0} credits)",
+  "menu.option.buy_model": "💰 购买 {0}",
   "menu.option.equip_model": "✅ 装备模型",
   "menu.option.unequip_model": "❌ 卸载模型",
   "menu.option.equipped": "✅ 已装备",
