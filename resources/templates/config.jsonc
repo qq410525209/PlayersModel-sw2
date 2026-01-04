@@ -54,10 +54,10 @@
       "ConnectionKey": "economyapi",
       
       // 玩家拥有的模型表名
-      "OwnedModelsTable": "player_owned_models",
+      "OwnedModelsTable": "playersmodel_owned_models",
       
       // 玩家当前使用的模型表名
-      "CurrentModelsTable": "player_current_models",
+      "CurrentModelsTable": "playersmodel_current_models",
       
       // 是否自动创建数据库表
       "AutoCreateTables": true

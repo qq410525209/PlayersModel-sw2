@@ -235,12 +235,17 @@ public class ModelService : IModelService
                     {
                         pawn.SetModel(modelPath);
                     }
-                }
-);
+                });
             }
 
             // 保存玩家当前使用的模型
-            _database.SetPlayerCurrentModelAsync(player.SteamID, model.ModelPath, model.ArmsPath).GetAwaiter().GetResult();
+            var currentTeam = player.Controller.TeamNum;
+            var teamName = currentTeam == 2 ? "T" : currentTeam == 3 ? "CT" : "Unknown";
+            
+            _database.SetPlayerCurrentModelAsync(
+                player.SteamID, 
+                player.Controller.PlayerName, 
+                modelId, model.ModelPath, model.ArmsPath, teamName).GetAwaiter().GetResult();
 
             _logger.LogInformation(_translation.GetConsole("modelservice.applied", player.Controller.PlayerName, model.DisplayName));
             return true;
@@ -298,7 +303,12 @@ public class ModelService : IModelService
             // 免费模型直接添加
             if (model.Price == 0)
             {
-                await _database.AddOwnedModelAsync(player.SteamID, modelId);
+                await _database.AddOwnedModelAsync(
+                    player.SteamID,
+                    player.Controller.PlayerName,
+                    modelId,
+                    0,
+                    "free");
                 return (true, _translation.Get("purchase.free_model", player, model.DisplayName));
             }
 
@@ -312,11 +322,25 @@ public class ModelService : IModelService
             }
 
             // 扣除金额
+            var balanceBefore = balance;
             _economyAPI.SubtractPlayerBalance(player, walletKind, model.Price);
 
-            // 添加到拥有列表
-            await _database.AddOwnedModelAsync(player.SteamID, modelId);
+            var balanceAfter = _economyAPI.GetPlayerBalance(player, walletKind);
 
+            // 添加到拥有列表
+            await _database.AddOwnedModelAsync(
+                player.SteamID,
+                player.Controller.PlayerName,
+                modelId,
+                model.Price,
+                "purchased");
+
+            // 记录交易
+            await _database.LogTransactionAsync(
+                player.SteamID,
+                player.Controller.PlayerName,
+                modelId,
+                "purchase", model.Price, (int)balanceBefore, (int)balanceAfter);
             var newBalance = _economyAPI.GetPlayerBalance(player, walletKind);
             _logger.LogInformation(_translation.GetConsole("modelservice.purchased", player.Controller.PlayerName, model.DisplayName, model.Price, walletKind));
 

@@ -251,7 +251,14 @@ public partial class PlayersModel
             }
 
             // 直接添加到玩家拥有列表
-            await _databaseService.AddOwnedModelAsync(targetPlayer.SteamID, modelId);
+            await _databaseService.AddOwnedModelAsync(
+            targetPlayer.SteamID,
+            targetPlayer.Controller.PlayerName,
+            modelId,
+            0,
+            "gifted",
+            player.SteamID,
+            $"由管理员 {player.Controller.PlayerName} 赠送");
 
             context.Reply($"{_translationService?.GetConsole("admin.givemodel.success", targetPlayer.Controller.PlayerName, model.DisplayName) ?? $"Gave {targetPlayer.Controller.PlayerName} model: {model.DisplayName}"}");
         });

@@ -25,7 +25,7 @@ public interface IDatabaseService
     /// <summary>
     /// 添加玩家拥有的模型
     /// </summary>
-    Task AddOwnedModelAsync(ulong steamId, string modelId);
+    Task AddOwnedModelAsync(ulong steamId, string playerName, string modelId, int pricePaid = 0, string source = "purchased", ulong? giftedBy = null, string? notes = null);
 
     /// <summary>
     /// 获取玩家拥有的所有模型 ID
@@ -40,12 +40,17 @@ public interface IDatabaseService
     /// <summary>
     /// 设置玩家当前装备的模型
     /// </summary>
-    Task SetPlayerCurrentModelAsync(ulong steamId, string modelPath, string armsPath = "");
+    Task SetPlayerCurrentModelAsync(ulong steamId, string playerName, string modelId, string modelPath, string armsPath, string team);
 
     /// <summary>
     /// 删除玩家的所有数据
     /// </summary>
     Task DeletePlayerDataAsync(ulong steamId);
+    
+    /// <summary>
+    /// 记录交易日志
+    /// </summary>
+    Task LogTransactionAsync(ulong steamId, string playerName, string modelId, string action, int amount = 0, int balanceBefore = 0, int balanceAfter = 0, ulong? operatorId = null, string? reason = null);
 }
 
 /// <summary>
@@ -78,6 +83,8 @@ public class DatabaseService : IDatabaseService
 
     private string OwnedModelsTable => _config.CurrentValue.Database.OwnedModelsTable;
     private string CurrentModelsTable => _config.CurrentValue.Database.CurrentModelsTable;
+    private string StatisticsTable => "playersmodel_statistics";
+    private string TransactionsTable => "playersmodel_transactions";
 
     /// <summary>
     /// 初始化数据库表
@@ -94,33 +101,90 @@ public class DatabaseService : IDatabaseService
         {
             using var connection = GetConnection();
 
-            // 创建玩家拥有的模型表
+            // 创建玩家拥有的模型表（优化版）
             var createOwnedModelsTable = $@"
                 CREATE TABLE IF NOT EXISTS {OwnedModelsTable} (
                     id BIGINT AUTO_INCREMENT PRIMARY KEY,
                     steam_id BIGINT NOT NULL,
+                    player_name VARCHAR(64),
                     model_id VARCHAR(128) NOT NULL,
+                    price_paid INT DEFAULT 0,
+                    source VARCHAR(32) DEFAULT 'purchased',
+                    gifted_by BIGINT NULL,
+                    notes VARCHAR(255) NULL,
                     purchased_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     UNIQUE KEY unique_player_model (steam_id, model_id),
-                    INDEX idx_steam_id (steam_id)
+                    INDEX idx_steam_id (steam_id),
+                    INDEX idx_source (source),
+                    INDEX idx_purchased_at (purchased_at)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
             ";
 
             await connection.ExecuteAsync(createOwnedModelsTable);
             _logger.LogInformation(_translation.GetConsole("database.table_initialized", OwnedModelsTable));
 
-            // 创建玩家当前装备的模型表 (新结构)
+            // 创建玩家当前装备的模型表（优化版）
             var createCurrentModelsTable = $@"
                 CREATE TABLE IF NOT EXISTS {CurrentModelsTable} (
                     steam_id BIGINT PRIMARY KEY,
+                    player_name VARCHAR(64),
+                    model_id VARCHAR(128),
                     model_path VARCHAR(255),
                     arms_path VARCHAR(255),
-                    equipped_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                    team VARCHAR(8),
+                    usage_count INT DEFAULT 0,
+                    equipped_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    INDEX idx_model_id (model_id),
+                    INDEX idx_team (team)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
             ";
 
             await connection.ExecuteAsync(createCurrentModelsTable);
             _logger.LogInformation(_translation.GetConsole("database.table_initialized", CurrentModelsTable));
+
+            // 创建统计表
+            var createStatisticsTable = $@"
+                CREATE TABLE IF NOT EXISTS {StatisticsTable} (
+                    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                    steam_id BIGINT NOT NULL,
+                    model_id VARCHAR(128) NOT NULL,
+                    equipped_count INT DEFAULT 0,
+                    total_playtime INT DEFAULT 0,
+                    last_used_at TIMESTAMP NULL,
+                    favorite TINYINT DEFAULT 0,
+                    UNIQUE KEY unique_player_model_stat (steam_id, model_id),
+                    INDEX idx_steam_id (steam_id),
+                    INDEX idx_model_id (model_id),
+                    INDEX idx_favorite (favorite)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+            ";
+
+            await connection.ExecuteAsync(createStatisticsTable);
+            _logger.LogInformation(_translation.GetConsole("database.table_initialized", StatisticsTable));
+
+            // 创建交易日志表
+            var createTransactionsTable = $@"
+                CREATE TABLE IF NOT EXISTS {TransactionsTable} (
+                    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                    steam_id BIGINT NOT NULL,
+                    player_name VARCHAR(64),
+                    model_id VARCHAR(128) NOT NULL,
+                    action VARCHAR(32) NOT NULL,
+                    amount INT DEFAULT 0,
+                    balance_before INT DEFAULT 0,
+                    balance_after INT DEFAULT 0,
+                    operator_id BIGINT NULL,
+                    reason VARCHAR(255) NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    INDEX idx_steam_id (steam_id),
+                    INDEX idx_model_id (model_id),
+                    INDEX idx_action (action),
+                    INDEX idx_created_at (created_at)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+            ";
+
+            await connection.ExecuteAsync(createTransactionsTable);
+            _logger.LogInformation(_translation.GetConsole("database.table_initialized", TransactionsTable));
         }
         catch (Exception ex)
         {
@@ -155,17 +219,28 @@ public class DatabaseService : IDatabaseService
     /// <summary>
     /// 添加玩家拥有的模型
     /// </summary>
-    public async Task AddOwnedModelAsync(ulong steamId, string modelId)
+    public async Task AddOwnedModelAsync(ulong steamId, string playerName, string modelId, int pricePaid = 0, string source = "purchased", ulong? giftedBy = null, string? notes = null)
     {
         try
         {
             using var connection = GetConnection();
             var sql = $@"
-                INSERT IGNORE INTO {OwnedModelsTable} (steam_id, model_id)
-                VALUES (@SteamId, @ModelId)
+                INSERT IGNORE INTO {OwnedModelsTable} 
+                (steam_id, player_name, model_id, price_paid, source, gifted_by, notes)
+                VALUES (@SteamId, @PlayerName, @ModelId, @PricePaid, @Source, @GiftedBy, @Notes)
             ";
 
-            await connection.ExecuteAsync(sql, new { SteamId = steamId, ModelId = modelId });
+            await connection.ExecuteAsync(sql, new
+            {
+                SteamId = steamId,
+                PlayerName = playerName,
+                ModelId = modelId,
+                PricePaid = pricePaid,
+                Source = source,
+                GiftedBy = giftedBy,
+                Notes = notes
+            });
+
             _logger.LogDebug(_translation.GetConsole("database.add_model_debug", steamId, modelId));
         }
         catch (Exception ex)
@@ -228,25 +303,50 @@ public class DatabaseService : IDatabaseService
     /// <summary>
     /// 设置玩家当前装备的模型
     /// </summary>
-    public async Task SetPlayerCurrentModelAsync(ulong steamId, string modelPath, string armsPath = "")
+    public async Task SetPlayerCurrentModelAsync(ulong steamId, string playerName, string modelId, string modelPath, string armsPath, string team)
     {
         try
         {
             using var connection = GetConnection();
             
             var sql = $@"
-                INSERT INTO {CurrentModelsTable} (steam_id, model_path, arms_path)
-                VALUES (@SteamId, @ModelPath, @ArmsPath)
+                INSERT INTO {CurrentModelsTable} 
+                (steam_id, player_name, model_id, model_path, arms_path, team, usage_count)
+                VALUES (@SteamId, @PlayerName, @ModelId, @ModelPath, @ArmsPath, @Team, 1)
                 ON DUPLICATE KEY UPDATE 
+                    player_name = @PlayerName,
+                    model_id = @ModelId,
                     model_path = @ModelPath, 
-                    arms_path = @ArmsPath, 
+                    arms_path = @ArmsPath,
+                    team = @Team,
+                    usage_count = usage_count + 1,
                     equipped_time = CURRENT_TIMESTAMP
             ";
 
-            await connection.ExecuteAsync(sql, new { 
-                SteamId = steamId, 
-                ModelPath = modelPath, 
-                ArmsPath = armsPath 
+            await connection.ExecuteAsync(sql, new
+            {
+                SteamId = steamId,
+                PlayerName = playerName,
+                ModelId = modelId,
+                ModelPath = modelPath,
+                ArmsPath = armsPath,
+                Team = team
+            });
+
+            // 更新统计表
+            var statsSql = $@"
+                INSERT INTO {StatisticsTable}
+                (steam_id, model_id, equipped_count, last_used_at)
+                VALUES (@SteamId, @ModelId, 1, CURRENT_TIMESTAMP)
+                ON DUPLICATE KEY UPDATE
+                    equipped_count = equipped_count + 1,
+                    last_used_at = CURRENT_TIMESTAMP
+            ";
+
+            await connection.ExecuteAsync(statsSql, new
+            {
+                SteamId = steamId,
+                ModelId = modelId
             });
             
             _logger.LogDebug(_translation.GetConsole("database.set_model_debug", steamId, modelPath));
@@ -255,6 +355,39 @@ public class DatabaseService : IDatabaseService
         {
             _logger.LogError(ex, _translation.GetConsole("database.set_model_failed", steamId));
             throw;
+        }
+    }
+
+    /// <summary>
+    /// 记录交易日志
+    /// </summary>
+    public async Task LogTransactionAsync(ulong steamId, string playerName, string modelId, string action, int amount = 0, int balanceBefore = 0, int balanceAfter = 0, ulong? operatorId = null, string? reason = null)
+    {
+        try
+        {
+            using var connection = GetConnection();
+            var sql = $@"
+                INSERT INTO {TransactionsTable}
+                (steam_id, player_name, model_id, action, amount, balance_before, balance_after, operator_id, reason)
+                VALUES (@SteamId, @PlayerName, @ModelId, @Action, @Amount, @BalanceBefore, @BalanceAfter, @OperatorId, @Reason)
+            ";
+
+            await connection.ExecuteAsync(sql, new
+            {
+                SteamId = steamId,
+                PlayerName = playerName,
+                ModelId = modelId,
+                Action = action,
+                Amount = amount,
+                BalanceBefore = balanceBefore,
+                BalanceAfter = balanceAfter,
+                OperatorId = operatorId,
+                Reason = reason
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to log transaction");
         }
     }
 
@@ -271,6 +404,9 @@ public class DatabaseService : IDatabaseService
                 new { SteamId = steamId });
             
             await connection.ExecuteAsync($"DELETE FROM {CurrentModelsTable} WHERE steam_id = @SteamId", 
+                new { SteamId = steamId });
+            
+            await connection.ExecuteAsync($"DELETE FROM {StatisticsTable} WHERE steam_id = @SteamId",
                 new { SteamId = steamId });
             
             _logger.LogInformation(_translation.GetConsole("database.delete_data", steamId));

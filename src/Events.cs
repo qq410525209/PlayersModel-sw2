@@ -5,6 +5,8 @@ using Microsoft.Extensions.Logging;
 using SwiftlyS2.Shared.GameEventDefinitions;
 using SwiftlyS2.Shared.GameEvents;
 using Economy.Contract;
+using Microsoft.Extensions.Options;
+using PlayersModel.Config;
 
 namespace PlayersModel;
 
@@ -67,10 +69,48 @@ public partial class PlayersModel
                 
                 try
                 {
+                    // 获取玩家当前阵营
+                    var currentTeam = player.Controller.TeamNum;
+                    var teamName = currentTeam == 2 ? "T" : currentTeam == 3 ? "CT" : "";
+                    
+                    if (string.IsNullOrEmpty(teamName)) return; // 不在T或CT队伍
+                    
                     var modelData = _databaseService.GetPlayerCurrentModelAsync(player.SteamID).GetAwaiter().GetResult();
+                    
+                    string modelPathToApply = "";
+                    
                     if (!string.IsNullOrEmpty(modelData.modelPath))
                     {
-                        player.Pawn.SetModel(modelData.modelPath);
+                        // 检查保存的模型是否适用于当前阵营
+                        var model = _modelService?.GetAllModels().FirstOrDefault(m => m.ModelPath == modelData.modelPath);
+                        
+                        if (model != null)
+                        {
+                            // 检查模型是否适用于当前阵营
+                            if (model.Team.Equals("All", StringComparison.OrdinalIgnoreCase) || 
+                                model.Team.Equals(teamName, StringComparison.OrdinalIgnoreCase))
+                            {
+                                modelPathToApply = modelData.modelPath;
+                            }
+                        }
+                    }
+                    
+                    // 如果没有合适的模型，使用阵营默认模型
+                    if (string.IsNullOrEmpty(modelPathToApply))
+                    {
+                        var config = _serviceProvider?.GetService<IOptionsMonitor<PluginConfig>>();
+                        if (config != null)
+                        {
+                            modelPathToApply = teamName == "CT" 
+                                ? config.CurrentValue.DefaultCTModelPath 
+                                : config.CurrentValue.DefaultTModelPath;
+                        }
+                    }
+                    
+                    // 应用模型
+                    if (!string.IsNullOrEmpty(modelPathToApply))
+                    {
+                        player.Pawn.SetModel(modelPathToApply);
                         var logger = _serviceProvider?.GetService<ILogger<PlayersModel>>();
                         logger?.LogInformation(_translationService?.GetConsole("events.player_join_applied", player.Controller.PlayerName) ?? $"Applied model on join: {player.Controller.PlayerName}");
                     }
@@ -95,10 +135,48 @@ public partial class PlayersModel
                 
                 try
                 {
+                    // 获取玩家当前阵营
+                    var currentTeam = player.Controller.TeamNum;
+                    var teamName = currentTeam == 2 ? "T" : currentTeam == 3 ? "CT" : "";
+                    
+                    if (string.IsNullOrEmpty(teamName)) return; // 不在T或CT队伍
+                    
                     var modelData = _databaseService.GetPlayerCurrentModelAsync(player.SteamID).GetAwaiter().GetResult();
+                    
+                    string modelPathToApply = "";
+                    
                     if (!string.IsNullOrEmpty(modelData.modelPath))
                     {
-                        player.Pawn.SetModel(modelData.modelPath);
+                        // 检查保存的模型是否适用于当前阵营
+                        var model = _modelService?.GetAllModels().FirstOrDefault(m => m.ModelPath == modelData.modelPath);
+                        
+                        if (model != null)
+                        {
+                            // 检查模型是否适用于当前阵营
+                            if (model.Team.Equals("All", StringComparison.OrdinalIgnoreCase) || 
+                                model.Team.Equals(teamName, StringComparison.OrdinalIgnoreCase))
+                            {
+                                modelPathToApply = modelData.modelPath;
+                            }
+                        }
+                    }
+                    
+                    // 如果没有合适的模型，使用阵营默认模型
+                    if (string.IsNullOrEmpty(modelPathToApply))
+                    {
+                        var config = _serviceProvider?.GetService<IOptionsMonitor<PluginConfig>>();
+                        if (config != null)
+                        {
+                            modelPathToApply = teamName == "CT" 
+                                ? config.CurrentValue.DefaultCTModelPath 
+                                : config.CurrentValue.DefaultTModelPath;
+                        }
+                    }
+                    
+                    // 应用模型
+                    if (!string.IsNullOrEmpty(modelPathToApply))
+                    {
+                        player.Pawn.SetModel(modelPathToApply);
                         var logger = _serviceProvider?.GetService<ILogger<PlayersModel>>();
                         logger?.LogInformation(_translationService?.GetConsole("events.player_spawn_applied", player.Controller.PlayerName) ?? $"Applied model on spawn: {player.Controller.PlayerName}");
                     }
@@ -133,10 +211,48 @@ public partial class PlayersModel
                     
                     try
                     {
+                        // 获取玩家当前阵营
+                        var currentTeam = player.Controller.TeamNum;
+                        var teamName = currentTeam == 2 ? "T" : currentTeam == 3 ? "CT" : "";
+                        
+                        if (string.IsNullOrEmpty(teamName)) continue; // 不在T或CT队伍
+                        
                         var modelData = _databaseService.GetPlayerCurrentModelAsync(player.SteamID).GetAwaiter().GetResult();
+                        
+                        string modelPathToApply = "";
+                        
                         if (!string.IsNullOrEmpty(modelData.modelPath))
                         {
-                            player.Pawn.SetModel(modelData.modelPath);
+                            // 检查保存的模型是否适用于当前阵营
+                            var model = _modelService?.GetAllModels().FirstOrDefault(m => m.ModelPath == modelData.modelPath);
+                            
+                            if (model != null)
+                            {
+                                // 检查模型是否适用于当前阵营
+                                if (model.Team.Equals("All", StringComparison.OrdinalIgnoreCase) || 
+                                    model.Team.Equals(teamName, StringComparison.OrdinalIgnoreCase))
+                                {
+                                    modelPathToApply = modelData.modelPath;
+                                }
+                            }
+                        }
+                        
+                        // 如果没有合适的模型，使用阵营默认模型
+                        if (string.IsNullOrEmpty(modelPathToApply))
+                        {
+                            var config = _serviceProvider?.GetService<IOptionsMonitor<PluginConfig>>();
+                            if (config != null)
+                            {
+                                modelPathToApply = teamName == "CT" 
+                                    ? config.CurrentValue.DefaultCTModelPath 
+                                    : config.CurrentValue.DefaultTModelPath;
+                            }
+                        }
+                        
+                        // 应用模型
+                        if (!string.IsNullOrEmpty(modelPathToApply))
+                        {
+                            player.Pawn.SetModel(modelPathToApply);
                             logger?.LogInformation(_translationService?.GetConsole("events.round_start_applied", player.Controller.PlayerName) ?? $"Applied model on round start: {player.Controller.PlayerName}");
                         }
                     }

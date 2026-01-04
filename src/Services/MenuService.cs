@@ -251,7 +251,15 @@ public class MenuService : IMenuService
             : _config.CurrentValue.DefaultTModelPath;
 
         // 设置为默认模型
-        await _databaseService.SetPlayerCurrentModelAsync(player.SteamID, defaultModelPath, "");
+  
+        var teamName = team.ToLower() == "ct" ? "CT" : "T";
+        await _databaseService.SetPlayerCurrentModelAsync(
+            player.SteamID,
+            player.Controller.PlayerName,
+            "", // 默认模型，modelId为空
+            defaultModelPath,
+            "",
+            teamName);
         
         // 应用默认模型到玩家
         if (player.Pawn?.IsValid == true)
