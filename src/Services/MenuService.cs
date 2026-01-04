@@ -5,6 +5,8 @@ using SwiftlyS2.Shared;
 using SwiftlyS2.Shared.Players;
 using SwiftlyS2.Shared.Menus;
 using SwiftlyS2.Core.Menus.OptionsBase;
+using SwiftlyS2.Shared.Sounds;
+using SwiftlyS2.Shared.GameEventDefinitions;
 
 namespace PlayersModel.Services;
 
@@ -195,9 +197,18 @@ public class MenuService : IMenuService
 
         if (menuConfig.EnableSound) builder.EnableSound();
 
-        // 模型信息
-        builder.AddOption(new TextMenuOption(model.Description));
-        builder.AddOption(new TextMenuOption($"{_translation["model.team"]}: {model.Team}"));
+
+        builder.AddOption(new TextMenuOption(model.Description)
+        {
+            Enabled = false,
+            PlaySound = false
+        });
+        builder.AddOption(new TextMenuOption($"{_translation["model.team"]}: {model.Team}")
+        {
+            Enabled = false,
+            PlaySound = false
+        }
+        );
         
         var owns = await _databaseService.PlayerOwnsModelAsync(player.SteamID, modelId);
         
