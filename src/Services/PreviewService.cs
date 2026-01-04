@@ -135,7 +135,7 @@ public class PreviewService : IPreviewService
             {
                 try
                 {
-                    oldEntity.AcceptInput("Kill", "", null, null, 0);
+                    oldEntity.AcceptInput("Kill", 0);
                 }
                 catch (Exception ex)
                 {
