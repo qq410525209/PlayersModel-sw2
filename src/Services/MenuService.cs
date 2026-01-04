@@ -212,9 +212,6 @@ public class MenuService : IMenuService
             unequipButton.Click += async (sender, args) =>
             {
                 await UnequipModelAsync(args.Player!, model.Team);
-                // 刷新当前菜单
-                var refreshedMenu = await BuildModelDetailMenuAsync(args.Player!, modelId);
-                _core.MenusAPI.OpenMenuForPlayer(args.Player!, refreshedMenu);
             };
             builder.AddOption(unequipButton);
         }
@@ -227,9 +224,6 @@ public class MenuService : IMenuService
                 if (success)
                 {
                     _logger.LogInformation(_translation.GetConsole("menuservice.player_equipped", args.Player!.Controller.PlayerName, model.DisplayName));
-                    // 刷新当前菜单
-                    var refreshedMenu = await BuildModelDetailMenuAsync(args.Player!, modelId);
-                    _core.MenusAPI.OpenMenuForPlayer(args.Player!, refreshedMenu);
                 }
             };
             builder.AddOption(equipButton);
@@ -243,12 +237,6 @@ public class MenuService : IMenuService
             {
                 var (success, message) = await _modelService.PurchaseModelAsync(args.Player!, modelId);
                 _logger.LogInformation($"{message}");
-                if (success)
-                {
-                    // 刷新当前菜单
-                    var refreshedMenu = await BuildModelDetailMenuAsync(args.Player!, modelId);
-                    _core.MenusAPI.OpenMenuForPlayer(args.Player!, refreshedMenu);
-                }
             };
             builder.AddOption(buyButton);
         }
