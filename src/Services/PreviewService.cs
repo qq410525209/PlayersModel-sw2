@@ -28,7 +28,7 @@ public class PreviewService : IPreviewService
     }
 
     /// <summary>
-    /// 显示模型预览（简化版本：在玩家前方50单位展示5秒）
+    /// 显示模型预览（在玩家前方100单位、高5单位展示5秒，带辉光效果）
     /// </summary>
     public void ShowPreview(IPlayer player, string modelPath)
     {
@@ -56,8 +56,9 @@ public class PreviewService : IPreviewService
             var pawn = player.Pawn;
             if (pawn?.AbsOrigin == null || pawn?.AbsRotation == null) return;
 
-            // 计算玩家前方50单位的位置
-            var spawnPos = CalculateFrontPosition(pawn.AbsOrigin.Value, pawn.AbsRotation.Value, 50.0f);
+            // 计算玩家前方100单位的位置，并增加5单位高度
+            var spawnPos = CalculateFrontPosition(pawn.AbsOrigin.Value, pawn.AbsRotation.Value, 100.0f);
+            spawnPos.Z += 5.0f;  // 增加5单位高度
 
             // 设置实体朝向玩家（旋转180度）
             var entityAngle = new QAngle(0, pawn.AbsRotation.Value.Y + 180, 0);
@@ -78,6 +79,17 @@ public class PreviewService : IPreviewService
 
             // 生成后立即设置模型
             entity.SetModel(modelPath);
+            
+
+            // 设置辉光效果（轮廓）
+            if (entity.Glow != null)
+            {
+                entity.Glow.GlowColorOverride = new Color(0, 255, 255, 255);  // 青色辉光
+                entity.Glow.GlowRange = 500;  // 辉光范围
+                entity.Glow.GlowRangeMin = 0;
+                entity.Glow.GlowType = 3;  // 辉光类型
+                entity.Glow.GlowTeam = -1;  // 辉光设置（实体本身已限制可见性）
+            }
 
             // 5秒后自动删除预览实体
             _core.Scheduler.DelayBySeconds(5.0f, () =>
