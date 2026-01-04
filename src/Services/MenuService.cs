@@ -200,18 +200,27 @@ public class MenuService : IMenuService
             builder.AddOption(new TextMenuOption(statusText));
         }
 
-        // 预览按钮 - 动作按钮，不是子菜单
+        // 预览按钮 - ButtonMenuOption，执行后不关闭菜单
         var previewButton = new ButtonMenuOption(OptionPreview);
-        previewButton.Click += async (sender, args) => _previewService.ShowPreview(args.Player!, model.ModelPath);
+        previewButton.Click += async (sender, args) => 
+        {
+            _previewService.ShowPreview(args.Player!, model.ModelPath);
+        };
         builder.AddOption(previewButton);
 
-        // 根据状态显示不同按钮 - 动作按钮，不是子菜单
+        // 根据状态显示不同按钮 - ButtonMenuOption，执行后不关闭菜单
         if (isEquipped)
         {
             var unequipButton = new ButtonMenuOption(OptionUnequip);
             unequipButton.Click += async (sender, args) =>
             {
                 await UnequipModelAsync(args.Player!, model.Team);
+                // 刷新当前菜单以显示最新状态
+                var refreshedMenu = await BuildModelDetailMenuAsync(args.Player!, modelId);
+                _core.Scheduler.DelayBySeconds(0.05f, () => {
+                    _core.MenusAPI.OpenMenuForPlayer(args.Player!, refreshedMenu);
+ // 直接打开新菜单会替换当前菜单
+                });
             };
             builder.AddOption(unequipButton);
         }
@@ -224,6 +233,12 @@ public class MenuService : IMenuService
                 if (success)
                 {
                     _logger.LogInformation(_translation.GetConsole("menuservice.player_equipped", args.Player!.Controller.PlayerName, model.DisplayName));
+                    // 刷新当前菜单以显示最新状态
+                    var refreshedMenu = await BuildModelDetailMenuAsync(args.Player!, modelId);
+                    _core.Scheduler.DelayBySeconds(0.05f, () => {
+                        _core.MenusAPI.OpenMenuForPlayer(args.Player!, refreshedMenu);
+ // 直接打开新菜单会替换当前菜单
+                    });
                 }
             };
             builder.AddOption(equipButton);
@@ -237,6 +252,15 @@ public class MenuService : IMenuService
             {
                 var (success, message) = await _modelService.PurchaseModelAsync(args.Player!, modelId);
                 _logger.LogInformation($"{message}");
+                if (success)
+                {
+                    // 购买成功后刷新菜单，显示装备选项
+                    var refreshedMenu = await BuildModelDetailMenuAsync(args.Player!, modelId);
+                    _core.Scheduler.DelayBySeconds(0.05f, () => {
+                        _core.MenusAPI.OpenMenuForPlayer(args.Player!, refreshedMenu);
+ // 直接打开新菜单会替换当前菜单
+                    });
+                }
             };
             builder.AddOption(buyButton);
         }

@@ -49,6 +49,9 @@
   "modelservice.purchase_disabled": "Purchase system disabled",
   "modelservice.purchased": "Player {0} purchased model {1}, spent {2} {3}",
   "modelservice.purchase_failed": "Failed to purchase model: {0}",
+  "modelservice.applied_now": "Player {0} applied model {1} immediately",
+  "modelservice.saved_for_later": "Player {0} saved model {1} (Team: {2}), will apply on respawn",
+  "modelservice.saved_all_teams": "Player {0} saved universal model {1} to both CT and T teams",
   
   // ========== Event Messages ==========
   "events.precache_model": "Precaching model: {0}",

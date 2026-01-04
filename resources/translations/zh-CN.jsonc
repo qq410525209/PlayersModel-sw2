@@ -49,6 +49,9 @@
   "modelservice.purchase_disabled": "购买系统未启用",
   "modelservice.purchased": "玩家 {0} 购买模型 {1}, 花费 {2} {3}",
   "modelservice.purchase_failed": "购买模型失败: {0}",
+  "modelservice.applied_now": "玩家 {0} 立即应用模型 {1}",
+  "modelservice.saved_for_later": "玩家 {0} 保存模型 {1} (阵营: {2})，将在重生时应用",
+  "modelservice.saved_all_teams": "玩家 {0} 保存通用模型 {1} 到CT和T两个阵营",
   
   // ========== 事件消息 ==========
   "events.precache_model": "预缓存模型: {0}",
