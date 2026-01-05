@@ -55,7 +55,7 @@ MeshGroup 功能允许你为模型配置可自定义的组件（如帽子、武�
 - **BodyGroupName**: 模型文件中定义的实际 BodyGroup 名称
 - **DisplayName**: 在菜单中显示给玩家的名称
 - **Description**: 组件描述，说明组件的部位（如：头部、身体、武器等）
-- **Price**: 购买此组件的价格（0表示免费，与模型价格完全独立）
+
 - **Options**: 该组件的所有可用选项列表
 
 #### MeshGroupOption（选项配置）
@@ -64,7 +64,7 @@ MeshGroup 功能允许你为模型配置可自定义的组件（如帽子、武�
 - **Index**: BodyGroup 索引值
   - `0` 通常表示隐藏/卸载该组件
   - `1, 2, 3...` 表示不同的组件变体
-- **AdditionalPrice**: 选择此选项需要支付的额外价格（在组件Price基础上）
+
 - **IsDefault**: 是否为默认选项（装备模型时自动应用）
 
 ### 3. 工作原理
@@ -74,7 +74,7 @@ MeshGroup 功能允许你为模型配置可自定义的组件（如帽子、武�
 2. 如果模型配置了 MeshGroups，系统会自动应用所有标记为 `IsDefault: true` 的选项
 3. 使用 CS2 的 `AcceptInput("SetBodyGroup")` 命令来切换组件
 
-## 价格系统详解
+## 使用说明
 
 ### 购买流程
 

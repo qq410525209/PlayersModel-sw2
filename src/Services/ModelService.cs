@@ -110,7 +110,7 @@ public class ModelService : IModelService
         var models = _modelConfig.CurrentValue.Models;
         _logger.LogInformation(_translation.GetConsole("system.models_loading", models.Count));
     }
-
+    
     /// <summary>
     /// 获取所有可用模型
     /// </summary>

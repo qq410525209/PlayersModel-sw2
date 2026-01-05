@@ -237,20 +237,17 @@
           "BodyGroupName": "Hat",  // 模型中的实际 BodyGroup 名称
           "DisplayName": "帽子",
           "Description": "头部装饰",
-          "Price": 500,
           "Options": [
             {
               "OptionId": "no_hat",
               "DisplayName": "无帽子",
               "Index": 0,
-              "AdditionalPrice": 0,
               "IsDefault": true
             },
             {
               "OptionId": "baseball_cap",
               "DisplayName": "棒球帽",
               "Index": 1,
-              "AdditionalPrice": 100,  // 选择此选项的额外费用
               "IsDefault": false
             }
           ]

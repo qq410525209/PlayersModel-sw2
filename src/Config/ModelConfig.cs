@@ -108,11 +108,6 @@ public class MeshGroupConfig
     public string Description { get; set; } = "";
 
     /// <summary>
-    /// 组件价格 (0表示免费)
-    /// </summary>
-    public int Price { get; set; } = 0;
-
-    /// <summary>
     /// 可用的索引选项列表
     /// </summary>
     public List<MeshGroupOption> Options { get; set; } = new();
@@ -137,11 +132,6 @@ public class MeshGroupOption
     /// BodyGroup 索引值 (0通常表示隐藏/卸载，1+表示不同变体)
     /// </summary>
     public int Index { get; set; } = 0;
-
-    /// <summary>
-    /// 此选项的额外价格 (在组件基础价格之上)
-    /// </summary>
-    public int AdditionalPrice { get; set; } = 0;
 
     /// <summary>
     /// 是否为默认选项
