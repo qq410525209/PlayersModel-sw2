@@ -250,7 +250,7 @@
               "OptionId": "baseball_cap",
               "DisplayName": "棒球帽",
               "Index": 1,
-              "AdditionalPrice": 100,
+              "AdditionalPrice": 100,  // 选择此选项的额外费用
               "IsDefault": false
             }
           ]
