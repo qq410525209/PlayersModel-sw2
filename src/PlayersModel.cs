@@ -159,6 +159,7 @@ namespace PlayersModel
             // 注册服务
             services.AddSingleton<IDatabaseService, DatabaseService>();
             services.AddSingleton<IModelService, ModelService>();
+            services.AddSingleton<IMeshGroupService, MeshGroupService>();
             services.AddSingleton<IModelCacheService, ModelCacheService>();
             services.AddSingleton<ITranslationService, TranslationService>();
             services.AddSingleton<IPreviewService, PreviewService>();

@@ -219,35 +219,99 @@
     
     // ========== MeshGroup 组件配置示例 ==========
     {
-      "ModelId": "example_with_meshgroup",
-      "DisplayName": "带组件的示例模型",
-      "Description": "演示如何配置 MeshGroup 组件",
-      "ModelPath": "characters/models/example/example.vmdl",
-      "ArmsPath": "",
+      "ModelId": "junchai",
+      "DisplayName": "柴郡",
+      "Description": "柴郡-演示如何配置 MeshGroup 组件",
+      "ModelPath": "characters/models/hlym/junchai/junchai.vmdl",
+      "ArmsPath": "phase2/characters/models/hlym/junchai/junchai_ag2.vmdl",
       "Team": "All",
       "Price": 1000,
       "VipOnly": false,
       "RequiredPermission": "",
       "AllowedSteamIds": [],
-      "Enabled": false,  // 示例模型默认禁用
+      "Enabled": true,  // 示例模型默认禁用
       "Priority": 100,
       "MeshGroups": [
         {
           "ComponentId": "hat",
-          "BodyGroupName": "Hat",  // 模型中的实际 BodyGroup 名称
-          "DisplayName": "帽子",
+          "BodyGroupName": "head",  // 模型中的实际 BodyGroup 名称
+          "DisplayName": "头部",
           "Description": "头部装饰",
           "Options": [
             {
-              "OptionId": "no_hat",
-              "DisplayName": "无帽子",
+              "OptionId": "0",
+              "DisplayName": "默认白脸",
               "Index": 0,
               "IsDefault": true
             },
             {
-              "OptionId": "baseball_cap",
-              "DisplayName": "棒球帽",
+              "OptionId": "1",
+              "DisplayName": "红脸",
               "Index": 1,
+              "IsDefault": false
+            }
+          ]
+        },
+        {
+          "ComponentId": "hair",
+          "BodyGroupName": "hair",  // 模型中的实际 BodyGroup 名称
+          "DisplayName": "头发",
+          "Description": "头发装饰",
+          "Options": [
+            {
+              "OptionId": "0",
+              "DisplayName": "默认",
+              "Index": 0,
+              "IsDefault": true
+            },
+            {
+              "OptionId": "1",
+              "DisplayName": "测试1",
+              "Index": 1,
+              "IsDefault": false
+            }
+          ]
+        },
+        {
+          "ComponentId": "body",
+          "BodyGroupName": "body",
+          "DisplayName": "身材",
+          "Description": "身材类型",
+          "Options": [
+            {
+              "OptionId": "0",
+              "DisplayName": "默认",
+              "Index": 0,
+              "IsDefault": true
+            },
+            {
+              "OptionId": "1",
+              "DisplayName": "测试1",
+              "Index": 1,
+              "IsDefault": false
+            },
+            {
+              "OptionId": "2",
+              "DisplayName": "测试2",
+              "Index": 2,
+              "IsDefault": false
+            },
+            {
+              "OptionId": "3",
+              "DisplayName": "测试3",
+              "Index": 3,
+              "IsDefault": false
+            },
+            {
+              "OptionId": "4",
+              "DisplayName": "测试4",
+              "Index": 4,
+              "IsDefault": false
+            },
+            {
+              "OptionId": "4",
+              "DisplayName": "测试4",
+              "Index": 5,
               "IsDefault": false
             }
           ]

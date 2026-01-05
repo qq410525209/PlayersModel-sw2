@@ -25,6 +25,7 @@ public class MenuService : IMenuService
     private readonly IPreviewService _previewService;
     private readonly ILogger<MenuService> _logger;
     private readonly IModelCacheService _modelCache;
+    private readonly IMeshGroupService _meshGroupService;
 
     // 菜单标题属性 - 使用索引器简化访问
     public string MenuTitle
@@ -61,7 +62,8 @@ public class MenuService : IMenuService
         ITranslationService translationService,
         IPreviewService previewService,
         ILogger<MenuService> logger,
-        IModelCacheService modelCache)
+        IModelCacheService modelCache,
+        IMeshGroupService meshGroupService)
     {
         _core = core;
         _config = config;
@@ -71,6 +73,7 @@ public class MenuService : IMenuService
         _previewService = previewService;
         _logger = logger;
         _modelCache = modelCache;
+        _meshGroupService = meshGroupService;
     }
 
     public void OpenMainMenu(IPlayer player)
@@ -289,6 +292,87 @@ public class MenuService : IMenuService
                 }
             };
             builder.AddOption(buyButton);
+        }
+
+        // 如果模型有 MeshGroup 配置且玩家拥有该模型，显示组件管理按钮
+        if (owns && model.MeshGroups != null && model.MeshGroups.Count > 0)
+        {
+            var componentButton = new SubmenuMenuOption("⚙️ 组件管理", () => BuildMeshGroupMenuAsync(player, modelId));
+            builder.AddOption(componentButton);
+        }
+
+        return builder.Build();
+    }
+
+    private async Task<IMenuAPI> BuildMeshGroupMenuAsync(IPlayer player, string modelId)
+    {
+        var menuConfig = _config.CurrentValue.Menu;
+        var model = _modelService.GetModelById(modelId);
+        
+        var builder = _core.MenusAPI
+            .CreateBuilder()
+            .Design.SetMenuTitle($"⚙️ {model?.DisplayName} - 组件管理")
+            .Design.SetMaxVisibleItems(menuConfig.ItemsPerPage);
+
+        if (menuConfig.EnableSound) builder.EnableSound();
+
+        if (model?.MeshGroups != null)
+        {
+            foreach (var meshGroup in model.MeshGroups)
+            {
+                var capturedComponentId = meshGroup.ComponentId;
+                var capturedModelId = modelId;
+                
+                // 获取当前选择的选项
+                var playerMeshGroups = _meshGroupService.GetPlayerMeshGroups(player.SteamID);
+                int currentIndex;
+                if (playerMeshGroups != null && playerMeshGroups.ContainsKey(meshGroup.ComponentId))
+                {
+                    currentIndex = playerMeshGroups[meshGroup.ComponentId];
+                }
+                else
+                {
+                    currentIndex = meshGroup.Options.FirstOrDefault(o => o.IsDefault)?.Index ?? 0;
+                }
+                
+                var currentOption = meshGroup.Options.FirstOrDefault(o => o.Index == currentIndex);
+                var displayName = currentOption != null 
+                    ? $"{meshGroup.DisplayName}: {currentOption.DisplayName}"
+                    : $"{meshGroup.DisplayName}";
+                
+                builder.AddOption(new SubmenuMenuOption(displayName, 
+                    () => BuildMeshGroupOptionsMenuAsync(player, capturedModelId, capturedComponentId)));
+            }
+        }
+
+        return builder.Build();
+    }
+
+    private async Task<IMenuAPI> BuildMeshGroupOptionsMenuAsync(IPlayer player, string modelId, string componentId)
+    {
+        var menuConfig = _config.CurrentValue.Menu;
+        var model = _modelService.GetModelById(modelId);
+        var meshGroup = model?.MeshGroups?.FirstOrDefault(mg => mg.ComponentId == componentId);
+        
+        var builder = _core.MenusAPI
+            .CreateBuilder()
+            .Design.SetMenuTitle($"🔧 {meshGroup?.DisplayName}")
+            .Design.SetMaxVisibleItems(menuConfig.ItemsPerPage);
+
+        if (menuConfig.EnableSound) builder.EnableSound();
+
+        if (meshGroup != null)
+        {
+            foreach (var option in meshGroup.Options)
+            {
+                var capturedOptionId = option.OptionId;
+                var button = new ButtonMenuOption(option.DisplayName);
+                button.Click += async (sender, args) =>
+                {
+                    await _meshGroupService.ToggleMeshGroupOption(args.Player!, modelId, componentId, capturedOptionId);
+                };
+                builder.AddOption(button);
+            }
         }
 
         return builder.Build();

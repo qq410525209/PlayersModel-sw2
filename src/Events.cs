@@ -7,6 +7,7 @@ using SwiftlyS2.Shared.GameEvents;
 using Economy.Contract;
 using Microsoft.Extensions.Options;
 using PlayersModel.Config;
+using PlayersModel.Services;
 
 namespace PlayersModel;
 
@@ -99,6 +100,18 @@ public partial class PlayersModel
                         player.Pawn.SetModel(modelPathToApply);
                         var logger = _serviceProvider?.GetService<ILogger<PlayersModel>>();
                         logger?.LogInformation(_translationService?.GetConsole("events.player_join_applied", player.Controller.PlayerName) ?? $"Applied model on join: {player.Controller.PlayerName}");
+                        
+                        // 应用 MeshGroup 配置
+                        var model = _modelService?.GetAllModels().FirstOrDefault(m => m.ModelPath == modelPathToApply);
+                        if (model != null && model.MeshGroups != null && model.MeshGroups.Count > 0)
+                        {
+                            var meshGroupService = _serviceProvider?.GetService<IMeshGroupService>();
+                            if (meshGroupService != null)
+                            {
+                                meshGroupService.LoadAndApplyPlayerMeshGroupsAsync(player, model.ModelId, teamName).GetAwaiter().GetResult();
+                                logger?.LogDebug($"加载并应用 MeshGroup 配置: {player.Controller.PlayerName}");
+                            }
+                        }
                     }
                 }
                 catch (Exception ex)
@@ -148,6 +161,18 @@ public partial class PlayersModel
                         player.Pawn.SetModel(modelPathToApply);
                         var logger = _serviceProvider?.GetService<ILogger<PlayersModel>>();
                         logger?.LogInformation(_translationService?.GetConsole("events.player_spawn_applied", player.Controller.PlayerName) ?? $"Applied model on spawn: {player.Controller.PlayerName}");
+                        
+                        // 应用 MeshGroup 配置
+                        var model = _modelService?.GetAllModels().FirstOrDefault(m => m.ModelPath == modelPathToApply);
+                        if (model != null && model.MeshGroups != null && model.MeshGroups.Count > 0)
+                        {
+                            var meshGroupService = _serviceProvider?.GetService<IMeshGroupService>();
+                            if (meshGroupService != null)
+                            {
+                                meshGroupService.LoadAndApplyPlayerMeshGroupsAsync(player, model.ModelId, teamName).GetAwaiter().GetResult();
+                                logger?.LogDebug($"加载并应用 MeshGroup 配置: {player.Controller.PlayerName}");
+                            }
+                        }
                     }
                 }
                 catch (Exception ex)
@@ -216,6 +241,18 @@ public partial class PlayersModel
                         {
                             player.Pawn.SetModel(modelPathToApply);
                             logger?.LogInformation(_translationService?.GetConsole("events.round_start_applied", player.Controller.PlayerName) ?? $"Applied model on round start: {player.Controller.PlayerName}");
+                            
+                            // 应用 MeshGroup 配置
+                            var model = _modelService?.GetAllModels().FirstOrDefault(m => m.ModelPath == modelPathToApply);
+                            if (model != null && model.MeshGroups != null && model.MeshGroups.Count > 0)
+                            {
+                                var meshGroupService = _serviceProvider?.GetService<IMeshGroupService>();
+                                if (meshGroupService != null)
+                                {
+                                    meshGroupService.LoadAndApplyPlayerMeshGroupsAsync(player, model.ModelId, teamName).GetAwaiter().GetResult();
+                                    logger?.LogDebug($"加载并应用 MeshGroup 配置: {player.Controller.PlayerName}");
+                                }
+                            }
                         }
                     }
                     catch (Exception ex)

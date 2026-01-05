@@ -66,6 +66,16 @@ public interface IDatabaseService
     /// 记录交易日志
     /// </summary>
     Task LogTransactionAsync(ulong steamId, string playerName, string modelId, string action, int amount = 0, int balanceBefore = 0, int balanceAfter = 0, ulong? operatorId = null, string? reason = null);
+
+    /// <summary>
+    /// 更新玩家模型的 MeshGroup 配置
+    /// </summary>
+    Task UpdatePlayerMeshGroupsAsync(ulong steamId, string team, string meshGroupsData);
+
+    /// <summary>
+    /// 获取玩家模型的 MeshGroup 配置
+    /// </summary>
+    Task<string?> GetPlayerMeshGroupsAsync(ulong steamId, string team);
 }
 
 /// <summary>
@@ -532,5 +542,45 @@ public class DatabaseService : IDatabaseService
             _logger.LogError(ex, _translation.GetConsole("database.delete_failed", steamId));
             throw;
         }
+    }
+
+    /// <summary>
+    /// 更新玩家模型的 MeshGroup 配置
+    /// </summary>
+    public async Task UpdatePlayerMeshGroupsAsync(ulong steamId, string team, string meshGroupsData)
+    {
+        try
+        {
+            using var connection = GetConnection();
+            var sql = $@"
+                UPDATE {CurrentModelsTable}
+                SET meshgroup = @MeshGroups
+                WHERE steam_id = @SteamId AND team = @Team
+            ";
+
+            await connection.ExecuteAsync(sql, new
+            {
+                SteamId = steamId,
+                Team = team,
+                MeshGroups = meshGroupsData
+            });
+
+            _logger.LogDebug($"更新 MeshGroup 配置: SteamID={steamId}, Team={team}, Data={meshGroupsData}");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"更新 MeshGroup 配置失败: SteamID={steamId}, Team={team}");
+        }
+    }
+
+    /// <summary>
+    /// 获取玩家模型的 MeshGroup 配置
+    /// </summary>
+    public async Task<string?> GetPlayerMeshGroupsAsync(ulong steamId, string team)
+    {
+        using var connection = GetConnection();
+        var sql = $@"SELECT meshgroup FROM {CurrentModelsTable} WHERE steam_id = @SteamId AND team = @Team";
+        
+        return await connection.QueryFirstOrDefaultAsync<string?>(sql, new { SteamId = steamId, Team = team });
     }
 }
