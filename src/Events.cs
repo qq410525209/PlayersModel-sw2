@@ -65,36 +65,23 @@ public partial class PlayersModel
 
             Core.Scheduler.DelayBySeconds(1.0f, () =>
             {
-                if (!player.IsValid || player.Pawn?.IsValid != true || _databaseService == null) return;
+                if (!player.IsValid || player.Pawn?.IsValid != true || _modelCacheService == null) return;
                 
                 try
                 {
+                    // 批量加载该玩家的缓存
+                    _modelCacheService.BatchLoadPlayerCachesAsync(new[] { player.SteamID }).GetAwaiter().GetResult();
+                    
                     // 获取玩家当前阵营
                     var currentTeam = player.Controller.TeamNum;
                     var teamName = currentTeam == 2 ? "T" : currentTeam == 3 ? "CT" : "";
                     
                     if (string.IsNullOrEmpty(teamName)) return; // 不在T或CT队伍
                     
-                    string modelPathToApply = "";
+                    // 从缓存获取应用的模型路径（优先级：All > CT/T）
+                    var modelPathToApply = _modelCacheService.GetModelPathToApply(player.SteamID, teamName);
                     
-                    // 优先级系统：All > CT/T
-                    // 1. 先检查All槽位
-                    var allModelData = _databaseService.GetPlayerCurrentModelAsync(player.SteamID, "All").GetAwaiter().GetResult();
-                    if (!string.IsNullOrEmpty(allModelData.modelPath))
-                    {
-                        modelPathToApply = allModelData.modelPath;
-                    }
-                    else
-                    {
-                        // 2. 如果All槽位没有，检查当前阵营槽位
-                        var teamModelData = _databaseService.GetPlayerCurrentModelAsync(player.SteamID, teamName).GetAwaiter().GetResult();
-                        if (!string.IsNullOrEmpty(teamModelData.modelPath))
-                        {
-                            modelPathToApply = teamModelData.modelPath;
-                        }
-                    }
-                    
-                    // 3. 如果都没有，使用阵营默认模型
+                    // 如果缓存中没有，使用阵营默认模型
                     if (string.IsNullOrEmpty(modelPathToApply))
                     {
                         var config = _serviceProvider?.GetService<IOptionsMonitor<PluginConfig>>();
@@ -130,7 +117,7 @@ public partial class PlayersModel
 
             Core.Scheduler.DelayBySeconds(0.1f, () =>
             {
-                if (!player.IsValid || player.Pawn?.IsValid != true || _databaseService == null) return;
+                if (!player.IsValid || player.Pawn?.IsValid != true || _modelCacheService == null) return;
                 
                 try
                 {
@@ -140,26 +127,10 @@ public partial class PlayersModel
                     
                     if (string.IsNullOrEmpty(teamName)) return; // 不在T或CT队伍
                     
-                    string modelPathToApply = "";
+                    // 从缓存获取应用的模型路径（优先级：All > CT/T）
+                    var modelPathToApply = _modelCacheService.GetModelPathToApply(player.SteamID, teamName);
                     
-                    // 优先级系统：All > CT/T
-                    // 1. 先检查All槽位
-                    var allModelData = _databaseService.GetPlayerCurrentModelAsync(player.SteamID, "All").GetAwaiter().GetResult();
-                    if (!string.IsNullOrEmpty(allModelData.modelPath))
-                    {
-                        modelPathToApply = allModelData.modelPath;
-                    }
-                    else
-                    {
-                        // 2. 如果All槽位没有，检查当前阵营槽位
-                        var teamModelData = _databaseService.GetPlayerCurrentModelAsync(player.SteamID, teamName).GetAwaiter().GetResult();
-                        if (!string.IsNullOrEmpty(teamModelData.modelPath))
-                        {
-                            modelPathToApply = teamModelData.modelPath;
-                        }
-                    }
-                    
-                    // 3. 如果都没有，使用阵营默认模型
+                    // 如果缓存中没有，使用阵营默认模型
                     if (string.IsNullOrEmpty(modelPathToApply))
                     {
                         var config = _serviceProvider?.GetService<IOptionsMonitor<PluginConfig>>();
@@ -200,12 +171,22 @@ public partial class PlayersModel
 
             Core.Scheduler.DelayBySeconds(0.5f, () =>
             {
-                var allPlayers = Enumerable.Range(0, 64).Select(i => playerManager.GetPlayer(i)).Where(p => p != null && p.IsValid);
+                var allPlayers = Enumerable.Range(0, 64)
+                    .Select(i => playerManager.GetPlayer(i))
+                    .Where(p => p != null && p.IsValid && p.Pawn?.IsValid == true)
+                    .ToList();
+                
+                if (allPlayers.Count == 0) return;
+                
+                // 批量加载所有玩家的缓存（一次数据库查询）
+                var steamIds = allPlayers.Select(p => p.SteamID).ToList();
+                _modelCacheService?.BatchLoadPlayerCachesAsync(steamIds).GetAwaiter().GetResult();
+                
+                logger?.LogInformation(_translationService?.GetConsole("events.round_start_batch_loaded", allPlayers.Count) ?? $"Batch loaded {allPlayers.Count} player models");
                 
                 foreach (var player in allPlayers)
                 {
-                    if (player == null) continue;
-                    if (player.Pawn?.IsValid != true || _databaseService == null) continue;
+                    if (player == null || _modelCacheService == null) continue;
                     
                     try
                     {
@@ -215,26 +196,10 @@ public partial class PlayersModel
                         
                         if (string.IsNullOrEmpty(teamName)) continue; // 不在T或CT队伍
                         
-                        string modelPathToApply = "";
+                        // 从缓存获取应用的模型路径（优先级：All > CT/T）
+                        var modelPathToApply = _modelCacheService.GetModelPathToApply(player.SteamID, teamName);
                         
-                        // 优先级系统：All > CT/T
-                        // 1. 先检查All槽位
-                        var allModelData = _databaseService.GetPlayerCurrentModelAsync(player.SteamID, "All").GetAwaiter().GetResult();
-                        if (!string.IsNullOrEmpty(allModelData.modelPath))
-                        {
-                            modelPathToApply = allModelData.modelPath;
-                        }
-                        else
-                        {
-                            // 2. 如果All槽位没有，检查当前阵营槽位
-                            var teamModelData = _databaseService.GetPlayerCurrentModelAsync(player.SteamID, teamName).GetAwaiter().GetResult();
-                            if (!string.IsNullOrEmpty(teamModelData.modelPath))
-                            {
-                                modelPathToApply = teamModelData.modelPath;
-                            }
-                        }
-                        
-                        // 3. 如果都没有，使用阵营默认模型
+                        // 如果缓存中没有，使用阵营默认模型
                         if (string.IsNullOrEmpty(modelPathToApply))
                         {
                             var config = _serviceProvider?.GetService<IOptionsMonitor<PluginConfig>>();

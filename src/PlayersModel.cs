@@ -24,6 +24,7 @@ namespace PlayersModel
         private IServiceProvider? _serviceProvider;
         private IDatabaseService? _databaseService;
         private IModelService? _modelService;
+        private IModelCacheService? _modelCacheService;
         private ITranslationService? _translationService;
 
         /// <summary>
@@ -158,6 +159,7 @@ namespace PlayersModel
             // 注册服务
             services.AddSingleton<IDatabaseService, DatabaseService>();
             services.AddSingleton<IModelService, ModelService>();
+            services.AddSingleton<IModelCacheService, ModelCacheService>();
             services.AddSingleton<ITranslationService, TranslationService>();
             services.AddSingleton<IPreviewService, PreviewService>();
             services.AddSingleton<IMenuService, MenuService>();
@@ -167,6 +169,7 @@ namespace PlayersModel
             // 获取服务实例
             _databaseService = _serviceProvider.GetRequiredService<IDatabaseService>();
             _modelService = _serviceProvider.GetRequiredService<IModelService>();
+            _modelCacheService = _serviceProvider.GetRequiredService<IModelCacheService>();
 
             Console.WriteLine($"{PluginPrefix} {_translationService?.GetConsole("system.di_initialized") ?? "Dependency injection initialized"}");
         }

@@ -37,6 +37,16 @@
   "database.set_model_failed": "Failed to set model for player {0}",
   "database.delete_data": "Deleted all data for player {0}",
   "database.delete_failed": "Failed to delete data for player {0}",
+  "database.delete_model_debug": "Deleted {1} team model for player {0}",
+  "database.delete_model_failed": "Failed to delete {1} team model for player {0}",
+  "database.batch_get_models_failed": "Failed to batch get owned models",
+  "database.batch_get_current_failed": "Failed to batch get current models",
+  
+  // ========== Cache Service Messages ==========
+  "cache.batch_loading": "Batch loading model cache for {0} players...",
+  "cache.batch_loaded": "✓ Successfully batch loaded model cache for {0} players",
+  "cache.batch_load_failed": "Failed to batch load player model cache",
+  "cache.all_cleared": "✓ Cleared all model caches",
   
   // ========== Model Service Messages ==========
   "modelservice.model_not_found": "Model {0} not found",
@@ -63,6 +73,7 @@
   "events.round_start": "Round started, applying saved models to all players",
   "events.round_start_applied": "Applied model on round start: {0}",
   "events.round_start_failed": "Failed to apply model on round start: {0}",
+  "events.round_start_batch_loaded": "✓ Batch loaded {0} player models on round start",
   
   // ========== Menu Service Messages ==========
   "menuservice.player_equipped": "Player {0} equipped model: {1}",

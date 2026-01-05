@@ -37,6 +37,16 @@
   "database.set_model_failed": "设置玩家 {0} 的模型失败",
   "database.delete_data": "删除玩家 {0} 的所有数据",
   "database.delete_failed": "删除玩家 {0} 的数据失败",
+  "database.delete_model_debug": "删除玩家 {0} 的 {1} 阵营模型",
+  "database.delete_model_failed": "删除玩家 {0} 的 {1} 阵营模型失败",
+  "database.batch_get_models_failed": "批量获取玩家拥有的模型失败",
+  "database.batch_get_current_failed": "批量获取玩家当前模型失败",
+  
+  // ========== 缓存服务消息 ==========
+  "cache.batch_loading": "正在批量加载 {0} 个玩家的模型缓存...",
+  "cache.batch_loaded": "✓ 成功批量加载 {0} 个玩家的模型缓存",
+  "cache.batch_load_failed": "批量加载玩家模型缓存失败",
+  "cache.all_cleared": "✓ 已清除所有模型缓存",
   
   // ========== 模型服务消息 ==========
   "modelservice.model_not_found": "模型 {0} 不存在",
@@ -63,6 +73,7 @@
   "events.round_start": "回合开始，为所有玩家应用保存的模型",
   "events.round_start_applied": "回合开始应用模型: {0}",
   "events.round_start_failed": "回合开始应用模型失败: {0}",
+  "events.round_start_batch_loaded": "✓ 回合开始批量加载 {0} 个玩家的模型数据",
   
   // ========== 菜单服务消息 ==========
   "menuservice.player_equipped": "玩家 {0} 装备模型: {1}",

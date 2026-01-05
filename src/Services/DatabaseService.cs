@@ -33,6 +33,11 @@ public interface IDatabaseService
     Task<List<string>> GetPlayerOwnedModelsAsync(ulong steamId);
 
     /// <summary>
+    /// 批量获取多个玩家拥有的所有模型
+    /// </summary>
+    Task<Dictionary<ulong, List<string>>> GetBatchPlayerOwnedModelsAsync(IEnumerable<ulong> steamIds);
+
+    /// <summary>
     /// 获取玩家当前装备的模型
     /// </summary>
     Task<(string? modelPath, string? armsPath)> GetPlayerCurrentModelAsync(ulong steamId, string team);
@@ -41,6 +46,11 @@ public interface IDatabaseService
     /// 设置玩家当前装备的模型
     /// </summary>
     Task SetPlayerCurrentModelAsync(ulong steamId, string playerName, string modelId, string modelPath, string armsPath, string team);
+
+    /// <summary>
+    /// 批量获取多个玩家的当前装备模型
+    /// </summary>
+    Task<Dictionary<ulong, Dictionary<string, (string? modelPath, string? armsPath)>>> GetBatchPlayerCurrentModelsAsync(IEnumerable<ulong> steamIds);
 
     /// <summary>
     /// 删除玩家指定阵营的当前模型
@@ -276,6 +286,80 @@ public class DatabaseService : IDatabaseService
         {
             _logger.LogError(ex, _translation.GetConsole("database.get_models_failed", steamId));
             return new List<string>();
+        }
+    }
+
+    /// <summary>
+    /// 批量获取多个玩家拥有的所有模型
+    /// </summary>
+    public async Task<Dictionary<ulong, List<string>>> GetBatchPlayerOwnedModelsAsync(IEnumerable<ulong> steamIds)
+    {
+        try
+        {
+            var steamIdList = steamIds.ToList();
+            if (steamIdList.Count == 0)
+                return new Dictionary<ulong, List<string>>();
+
+            using var connection = GetConnection();
+            var sql = $@"
+                SELECT steam_id, model_id FROM {OwnedModelsTable}
+                WHERE steam_id IN @SteamIds
+            ";
+
+            var results = await connection.QueryAsync<(ulong steam_id, string model_id)>(
+                sql, new { SteamIds = steamIdList });
+
+            return results
+                .GroupBy(r => r.steam_id)
+                .ToDictionary(g => g.Key, g => g.Select(r => r.model_id).ToList());
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, _translation.GetConsole("database.batch_get_models_failed"));
+            return new Dictionary<ulong, List<string>>();
+        }
+    }
+
+    /// <summary>
+    /// 批量获取多个玩家的当前装备模型
+    /// </summary>
+    public async Task<Dictionary<ulong, Dictionary<string, (string? modelPath, string? armsPath)>>> GetBatchPlayerCurrentModelsAsync(IEnumerable<ulong> steamIds)
+    {
+        try
+        {
+            var steamIdList = steamIds.ToList();
+            if (steamIdList.Count == 0)
+                return new Dictionary<ulong, Dictionary<string, (string? modelPath, string? armsPath)>>();
+
+            using var connection = GetConnection();
+            var sql = $@"
+                SELECT steam_id, team, model_path, arms_path FROM {CurrentModelsTable}
+                WHERE steam_id IN @SteamIds
+            ";
+
+            var results = await connection.QueryAsync<dynamic>(sql, new { SteamIds = steamIdList });
+            
+            var playerModels = new Dictionary<ulong, Dictionary<string, (string? modelPath, string? armsPath)>>();
+            
+            foreach (var row in results)
+            {
+                ulong steamId = (ulong)row.steam_id;
+                string team = (string)row.team;
+                string? modelPath = row.model_path;
+                string? armsPath = row.arms_path;
+                
+                if (!playerModels.ContainsKey(steamId))
+                    playerModels[steamId] = new Dictionary<string, (string?, string?)>();
+                
+                playerModels[steamId][team] = (modelPath, armsPath);
+            }
+            
+            return playerModels;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, _translation.GetConsole("database.batch_get_current_failed"));
+            return new Dictionary<ulong, Dictionary<string, (string? modelPath, string? armsPath)>>();
         }
     }
 

@@ -60,12 +60,14 @@ public class ModelService : IModelService
     private readonly ILogger<ModelService> _logger;
     private readonly ITranslationService _translation;
     private IEconomyAPIv1? _economyAPI;
+    private readonly IModelCacheService _modelCache;
 
     public ModelService(
         ISwiftlyCore core,
         IOptionsMonitor<PluginConfig> config,
         IOptionsMonitor<ModelConfigRoot> modelConfig,
         IDatabaseService database,
+        IModelCacheService modelCache,
         ILogger<ModelService> logger,
         ITranslationService translation)
     {
@@ -73,6 +75,7 @@ public class ModelService : IModelService
         _config = config;
         _modelConfig = modelConfig;
         _database = database;
+        _modelCache = modelCache;
         _logger = logger;
         _translation = translation;
     }
@@ -229,6 +232,9 @@ public class ModelService : IModelService
                 player.SteamID, 
                 player.Controller.PlayerName, 
                 modelId, model.ModelPath, model.ArmsPath, targetTeam).GetAwaiter().GetResult();
+            
+            // 更新缓存
+            _modelCache.UpdatePlayerCache(player.SteamID, targetTeam, model.ModelPath, model.ArmsPath);
 
             // 获取玩家当前阵营
             var currentTeam = player.Controller.TeamNum;
