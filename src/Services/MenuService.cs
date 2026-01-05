@@ -190,26 +190,17 @@ public class MenuService : IMenuService
             return errorBuilder.Build();
         }
 
+        // 将Description和Team信息整合到标题中
+        var titleWithInfo = $"📦 {model.DisplayName}\n{model.Description}\n{_translation["model.team"]}: {model.Team}";
+        
         var builder = _core.MenusAPI
             .CreateBuilder()
-            .Design.SetMenuTitle($"📦 {model.DisplayName}")
+            .Design.SetMenuTitle(titleWithInfo)
             .Design.SetMaxVisibleItems(menuConfig.ItemsPerPage);
 
         if (menuConfig.EnableSound) builder.EnableSound();
 
 
-        builder.AddOption(new TextMenuOption(model.Description)
-        {
-            Enabled = false,
-            PlaySound = false
-        });
-        builder.AddOption(new TextMenuOption($"{_translation["model.team"]}: {model.Team}")
-        {
-            Enabled = false,
-            PlaySound = false
-        }
-        );
-        
         var owns = await _databaseService.PlayerOwnsModelAsync(player.SteamID, modelId);
         
         // 根据模型的Team属性检查对应槽位的装备状态

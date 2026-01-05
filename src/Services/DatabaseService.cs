@@ -141,15 +141,17 @@ public class DatabaseService : IDatabaseService
             // 创建玩家当前装备的模型表（优化版）
             var createCurrentModelsTable = $@"
                 CREATE TABLE IF NOT EXISTS {CurrentModelsTable} (
+                    id BIGINT AUTO_INCREMENT PRIMARY KEY,
                     steam_id BIGINT NOT NULL,
                     player_name VARCHAR(64),
                     model_id VARCHAR(128),
                     model_path VARCHAR(255),
                     arms_path VARCHAR(255),
                     team VARCHAR(8),
+                    meshgroup VARCHAR(255) NULL,
                     usage_count INT DEFAULT 0,
                     equipped_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                    PRIMARY KEY (steam_id, team),
+                    UNIQUE KEY unique_steam_team (steam_id, team),
                     INDEX idx_model_id (model_id),
                     INDEX idx_team (team)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
