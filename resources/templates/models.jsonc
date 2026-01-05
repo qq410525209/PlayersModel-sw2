@@ -1,5 +1,4 @@
 {
-  // 玩家模型配置列表
   "Models": [
     {
       "ModelId": "ct_gign",
@@ -98,12 +97,10 @@
       "ModelPath": "phase2/characters/xfdz/taofu/tofu.vmdl",
       "ArmsPath": "phase2/characters/xfdz/xfdz/xfdz_ag2.vmdl",
       "Team": "All",
-      "Price": 0,
+      "Price": 150,
       "VipOnly": false,
       "RequiredPermission": "",
-      "AllowedSteamIds": [
-        76561198012345678
-      ],
+      "AllowedSteamIds": [76561198071849378],
       "Enabled": true,
       "Priority": 100
     },
@@ -178,7 +175,7 @@
       "Priority": 1
     },
     {
-      "ModelId": "kanade",
+      "ModelId": "xqza",
       "DisplayName": "宵崎奏",
       "Description": "宵崎奏-思い出を取り戻して",
       "ModelPath": "characters/models/pjsk/25/knd/model/knd_bes.vmdl",
@@ -218,6 +215,47 @@
       "AllowedSteamIds": [],
       "Enabled": true,
       "Priority": 1
+    },
+    
+    // ========== MeshGroup 组件配置示例 ==========
+    {
+      "ModelId": "example_with_meshgroup",
+      "DisplayName": "带组件的示例模型",
+      "Description": "演示如何配置 MeshGroup 组件",
+      "ModelPath": "characters/models/example/example.vmdl",
+      "ArmsPath": "",
+      "Team": "All",
+      "Price": 1000,
+      "VipOnly": false,
+      "RequiredPermission": "",
+      "AllowedSteamIds": [],
+      "Enabled": false,  // 示例模型默认禁用
+      "Priority": 100,
+      "MeshGroups": [
+        {
+          "ComponentId": "hat",
+          "BodyGroupName": "Hat",  // 模型中的实际 BodyGroup 名称
+          "DisplayName": "帽子",
+          "Description": "头部装饰",
+          "Price": 500,
+          "Options": [
+            {
+              "OptionId": "no_hat",
+              "DisplayName": "无帽子",
+              "Index": 0,
+              "AdditionalPrice": 0,
+              "IsDefault": true
+            },
+            {
+              "OptionId": "baseball_cap",
+              "DisplayName": "棒球帽",
+              "Index": 1,
+              "AdditionalPrice": 100,
+              "IsDefault": false
+            }
+          ]
+        }
+      ]
     }
   ]
 }

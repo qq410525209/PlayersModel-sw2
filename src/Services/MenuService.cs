@@ -24,6 +24,7 @@ public class MenuService : IMenuService
     private readonly ITranslationService _translation;
     private readonly IPreviewService _previewService;
     private readonly ILogger<MenuService> _logger;
+    private readonly IModelCacheService _modelCache;
 
     // 菜单标题属性 - 使用索引器简化访问
     public string MenuTitle
@@ -59,7 +60,8 @@ public class MenuService : IMenuService
         IDatabaseService databaseService,
         ITranslationService translationService,
         IPreviewService previewService,
-        ILogger<MenuService> logger)
+        ILogger<MenuService> logger,
+        IModelCacheService modelCache)
     {
         _core = core;
         _config = config;
@@ -68,6 +70,7 @@ public class MenuService : IMenuService
         _translation = translationService;
         _previewService = previewService;
         _logger = logger;
+        _modelCache = modelCache;
     }
 
     public void OpenMainMenu(IPlayer player)
@@ -190,15 +193,24 @@ public class MenuService : IMenuService
             return errorBuilder.Build();
         }
 
-        // 将Description和Team信息整合到标题中
-        var titleWithInfo = $"📦 {model.DisplayName}\n{model.Description}\n{_translation["model.team"]}: {model.Team}";
+        // 标题只显示名称和阵营
+        var titleWithTeam = $"📦 {model.DisplayName} [{model.Team}]";
         
         var builder = _core.MenusAPI
             .CreateBuilder()
-            .Design.SetMenuTitle(titleWithInfo)
+            .Design.SetMenuTitle(titleWithTeam)
             .Design.SetMaxVisibleItems(menuConfig.ItemsPerPage);
 
         if (menuConfig.EnableSound) builder.EnableSound();
+
+        
+        // 添加描述作为第一个不可点击的菜单项
+        builder.AddOption(new TextMenuOption(model.Description)
+        {
+            Enabled = false,
+            PlaySound = false
+
+        });
 
 
         var owns = await _databaseService.PlayerOwnsModelAsync(player.SteamID, modelId);
@@ -229,7 +241,12 @@ public class MenuService : IMenuService
             unequipButton.Click += async (sender, args) =>
             {
                 await UnequipModelAsync(args.Player!, model.Team);
-                // 操作完成，用户可按返回键回到模型列表
+                // 刷新当前菜单，显示更新后的状态
+                var refreshedMenu = await BuildModelDetailMenuAsync(args.Player!, modelId);
+                _core.Scheduler.DelayBySeconds(0.1f, () =>
+                {
+                    _core.MenusAPI.OpenMenuForPlayer(args.Player!, refreshedMenu);
+                });
             };
             builder.AddOption(unequipButton);
         }
@@ -243,7 +260,12 @@ public class MenuService : IMenuService
                 {
                     _logger.LogInformation(_translation.GetConsole("menuservice.player_equipped", args.Player!.Controller.PlayerName, model.DisplayName));
                 }
-                // 操作完成，用户可按返回键回到模型列表
+                // 刷新当前菜单，显示更新后的状态
+                var refreshedMenu = await BuildModelDetailMenuAsync(args.Player!, modelId);
+                _core.Scheduler.DelayBySeconds(0.1f, () =>
+                {
+                    _core.MenusAPI.OpenMenuForPlayer(args.Player!, refreshedMenu);
+                });
             };
             builder.AddOption(equipButton);
         }
@@ -256,7 +278,15 @@ public class MenuService : IMenuService
             {
                 var (success, message) = await _modelService.PurchaseModelAsync(args.Player!, modelId);
                 _logger.LogInformation($"{message}");
-                // 操作完成，用户可按返回键回到模型列表
+                // 如果购买成功，刷新菜单显示装备按钮
+                if (success)
+                {
+                    var refreshedMenu = await BuildModelDetailMenuAsync(args.Player!, modelId);
+                    _core.Scheduler.DelayBySeconds(0.1f, () =>
+                    {
+                        _core.MenusAPI.OpenMenuForPlayer(args.Player!, refreshedMenu);
+                    });
+                }
             };
             builder.AddOption(buyButton);
         }
@@ -268,6 +298,9 @@ public class MenuService : IMenuService
     {
         // 删除数据库中对应槽位的记录
         await _databaseService.DeletePlayerCurrentModelAsync(player.SteamID, team);
+        
+        // 更新缓存：清除该槽位的模型数据
+        _modelCache.UpdatePlayerCache(player.SteamID, team, null, null);
         
         _logger.LogInformation(_translation.GetConsole("menuservice.player_unequipped", player.Controller.PlayerName, team));
         

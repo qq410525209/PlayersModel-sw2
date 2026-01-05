@@ -75,4 +75,76 @@ public class PlayerModelConfig
     /// 排序优先级 (数字越小越靠前)
     /// </summary>
     public int Priority { get; set; } = 0;
+
+    /// <summary>
+    /// MeshGroup 组件配置列表 (可选)
+    /// </summary>
+    public List<MeshGroupConfig>? MeshGroups { get; set; } = null;
+}
+
+/// <summary>
+/// MeshGroup 组件配置
+/// </summary>
+public class MeshGroupConfig
+{
+    /// <summary>
+    /// 组件唯一ID (用于存储)
+    /// </summary>
+    public string ComponentId { get; set; } = "";
+
+    /// <summary>
+    /// BodyGroup 名称 (模型中的实际组件名)
+    /// </summary>
+    public string BodyGroupName { get; set; } = "";
+
+    /// <summary>
+    /// 组件显示名称
+    /// </summary>
+    public string DisplayName { get; set; } = "";
+
+    /// <summary>
+    /// 组件描述 (如：头部、身体、武器等)
+    /// </summary>
+    public string Description { get; set; } = "";
+
+    /// <summary>
+    /// 组件价格 (0表示免费)
+    /// </summary>
+    public int Price { get; set; } = 0;
+
+    /// <summary>
+    /// 可用的索引选项列表
+    /// </summary>
+    public List<MeshGroupOption> Options { get; set; } = new();
+}
+
+/// <summary>
+/// MeshGroup 选项配置
+/// </summary>
+public class MeshGroupOption
+{
+    /// <summary>
+    /// 选项ID
+    /// </summary>
+    public string OptionId { get; set; } = "";
+
+    /// <summary>
+    /// 选项显示名称
+    /// </summary>
+    public string DisplayName { get; set; } = "";
+
+    /// <summary>
+    /// BodyGroup 索引值 (0通常表示隐藏/卸载，1+表示不同变体)
+    /// </summary>
+    public int Index { get; set; } = 0;
+
+    /// <summary>
+    /// 此选项的额外价格 (在组件基础价格之上)
+    /// </summary>
+    public int AdditionalPrice { get; set; } = 0;
+
+    /// <summary>
+    /// 是否为默认选项
+    /// </summary>
+    public bool IsDefault { get; set; } = false;
 }

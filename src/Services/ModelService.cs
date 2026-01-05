@@ -294,6 +294,25 @@ public class ModelService : IModelService
                         if (pawn?.IsValid == true)
                         {
                             pawn.SetModel(pathToApply);
+                            
+                            // 应用 MeshGroup 默认配置
+                            if (model.MeshGroups != null && model.MeshGroups.Count > 0)
+                            {
+                                _core.Scheduler.DelayBySeconds(0.05f, () =>
+                                {
+                                    if (pawn?.IsValid == true)
+                                    {
+                                        foreach (var meshGroup in model.MeshGroups)
+                                        {
+                                            var defaultOption = meshGroup.Options.FirstOrDefault(o => o.IsDefault);
+                                            if (defaultOption != null)
+                                            {
+                                                ApplyMeshGroup(pawn, meshGroup.BodyGroupName, defaultOption.Index);
+                                            }
+                                        }
+                                    }
+                                });
+                            }
                         }
                     });
                     _logger.LogInformation(_translation.GetConsole("modelservice.applied_now", player.Controller.PlayerName, model.DisplayName));
@@ -410,6 +429,25 @@ public class ModelService : IModelService
         {
             _logger.LogError(ex, _translation.GetConsole("modelservice.purchase_failed", modelId));
             return (false, _translation.Get("purchase.failed", player));
+        }
+    }
+
+    /// <summary>
+    /// 应用 MeshGroup 到实体
+    /// </summary>
+    private void ApplyMeshGroup(dynamic pawn, string bodyGroupName, int index)
+    {
+        try
+        {
+            // 使用 AcceptInput 设置 BodyGroup
+            // 格式: "BodyGroupName,Index"
+            string value = $"{bodyGroupName},{index}";
+            pawn.AcceptInput("SetBodyGroup", activator: pawn, caller: pawn, value: value);
+            _logger.LogDebug($"Applied MeshGroup: {bodyGroupName} = {index}");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Failed to apply MeshGroup: {bodyGroupName}");
         }
     }
 }
