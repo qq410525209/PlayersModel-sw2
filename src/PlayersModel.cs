@@ -25,6 +25,7 @@ namespace PlayersModel
         private IDatabaseService? _databaseService;
         private IModelService? _modelService;
         private IModelCacheService? _modelCacheService;
+        private IMeshGroupService? _meshGroupService;
         private ITranslationService? _translationService;
 
         /// <summary>
@@ -171,6 +172,7 @@ namespace PlayersModel
             _databaseService = _serviceProvider.GetRequiredService<IDatabaseService>();
             _modelService = _serviceProvider.GetRequiredService<IModelService>();
             _modelCacheService = _serviceProvider.GetRequiredService<IModelCacheService>();
+            _meshGroupService = _serviceProvider.GetRequiredService<IMeshGroupService>();
 
             Console.WriteLine($"{PluginPrefix} {_translationService?.GetConsole("system.di_initialized") ?? "Dependency injection initialized"}");
         }
@@ -187,6 +189,14 @@ namespace PlayersModel
                 {
                     modelService.SetEconomyAPI(_economyAPI);
                     Console.WriteLine($"{PluginPrefix} {_translationService?.GetConsole("system.economy_api_passed") ?? "Economy API successfully passed to ModelService"}");
+                     
+   
+                // 将 MeshGroupService 传递给 ModelService
+                    if (_meshGroupService != null)
+                    {
+                        modelService.SetMeshGroupService(_meshGroupService);
+                        Console.WriteLine($"{PluginPrefix} MeshGroupService successfully passed to ModelService");
+                    }
                 }
 
                 // 确保钱包类型存在

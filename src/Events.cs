@@ -62,7 +62,8 @@ public partial class PlayersModel
             var playerManager = _serviceProvider?.GetService<IPlayerManagerService>();
             if (playerManager == null) return;
             var player = playerManager.GetPlayer(@event.PlayerId);
-            if (player == null || !player.IsValid) return;
+            // 跳过BOT
+            if (player == null || !player.IsValid || player.SteamID == 0 || player.SteamID < 70000000000000000) return;
 
             Core.Scheduler.DelayBySeconds(1.0f, () =>
             {
@@ -101,17 +102,23 @@ public partial class PlayersModel
                         var logger = _serviceProvider?.GetService<ILogger<PlayersModel>>();
                         logger?.LogInformation(_translationService?.GetConsole("events.player_join_applied", player.Controller.PlayerName) ?? $"Applied model on join: {player.Controller.PlayerName}");
                         
-                        // 应用 MeshGroup 配置
-                        var model = _modelService?.GetAllModels().FirstOrDefault(m => m.ModelPath == modelPathToApply);
-                        if (model != null && model.MeshGroups != null && model.MeshGroups.Count > 0)
+                        // 延迟应用 MeshGroup 配置，确保模型先加载
+                        Core.Scheduler.DelayBySeconds(0.25f, () =>
                         {
-                            var meshGroupService = _serviceProvider?.GetService<IMeshGroupService>();
-                            if (meshGroupService != null)
+                            if (player?.Pawn?.IsValid == true)
                             {
-                                meshGroupService.LoadAndApplyPlayerMeshGroupsAsync(player, model.ModelId, teamName).GetAwaiter().GetResult();
-                                logger?.LogDebug($"加载并应用 MeshGroup 配置: {player.Controller.PlayerName}");
+                                var model = _modelService?.GetAllModels().FirstOrDefault(m => m.ModelPath == modelPathToApply);
+                                if (model != null && model.MeshGroups != null && model.MeshGroups.Count > 0)
+                                {
+                                    var meshGroupService = _serviceProvider?.GetService<IMeshGroupService>();
+                                    if (meshGroupService != null)
+                                    {
+                                        meshGroupService.LoadAndApplyPlayerMeshGroupsAsync(player, model.ModelId, teamName).GetAwaiter().GetResult();
+                                        logger?.LogDebug($"加载并应用 MeshGroup 配置: {player.Controller.PlayerName}");
+                                    }
+                                }
                             }
-                        }
+                        });
                     }
                 }
                 catch (Exception ex)
@@ -126,7 +133,8 @@ public partial class PlayersModel
         Core.GameEvent.HookPost<EventPlayerSpawn>((@event) =>
         {
             var player = @event.UserIdPlayer;
-            if (player == null || !player.IsValid) return HookResult.Continue;
+            // 跳过BOT
+            if (player == null || !player.IsValid || player.SteamID == 0 || player.SteamID < 70000000000000000) return HookResult.Continue;
 
             Core.Scheduler.DelayBySeconds(0.1f, () =>
             {
@@ -162,17 +170,23 @@ public partial class PlayersModel
                         var logger = _serviceProvider?.GetService<ILogger<PlayersModel>>();
                         logger?.LogInformation(_translationService?.GetConsole("events.player_spawn_applied", player.Controller.PlayerName) ?? $"Applied model on spawn: {player.Controller.PlayerName}");
                         
-                        // 应用 MeshGroup 配置
-                        var model = _modelService?.GetAllModels().FirstOrDefault(m => m.ModelPath == modelPathToApply);
-                        if (model != null && model.MeshGroups != null && model.MeshGroups.Count > 0)
+                        // 延迟应用 MeshGroup 配置，确保模型先加载
+                        Core.Scheduler.DelayBySeconds(0.25f, () =>
                         {
-                            var meshGroupService = _serviceProvider?.GetService<IMeshGroupService>();
-                            if (meshGroupService != null)
+                            if (player?.Pawn?.IsValid == true)
                             {
-                                meshGroupService.LoadAndApplyPlayerMeshGroupsAsync(player, model.ModelId, teamName).GetAwaiter().GetResult();
-                                logger?.LogDebug($"加载并应用 MeshGroup 配置: {player.Controller.PlayerName}");
+                                var model = _modelService?.GetAllModels().FirstOrDefault(m => m.ModelPath == modelPathToApply);
+                                if (model != null && model.MeshGroups != null && model.MeshGroups.Count > 0)
+                                {
+                                    var meshGroupService = _serviceProvider?.GetService<IMeshGroupService>();
+                                    if (meshGroupService != null)
+                                    {
+                                        meshGroupService.LoadAndApplyPlayerMeshGroupsAsync(player, model.ModelId, teamName).GetAwaiter().GetResult();
+                                        logger?.LogDebug($"加载并应用 MeshGroup 配置: {player.Controller.PlayerName}");
+                                    }
+                                }
                             }
-                        }
+                        });
                     }
                 }
                 catch (Exception ex)
@@ -198,7 +212,8 @@ public partial class PlayersModel
             {
                 var allPlayers = Enumerable.Range(0, 64)
                     .Select(i => playerManager.GetPlayer(i))
-                    .Where(p => p != null && p.IsValid && p.Pawn?.IsValid == true)
+                    // 跳过BOT
+                    .Where(p => p != null && p.IsValid && p.SteamID > 0 && p.SteamID >= 70000000000000000 && p.Pawn?.IsValid == true)
                     .ToList();
                 
                 if (allPlayers.Count == 0) return;
@@ -242,17 +257,23 @@ public partial class PlayersModel
                             player.Pawn.SetModel(modelPathToApply);
                             logger?.LogInformation(_translationService?.GetConsole("events.round_start_applied", player.Controller.PlayerName) ?? $"Applied model on round start: {player.Controller.PlayerName}");
                             
-                            // 应用 MeshGroup 配置
-                            var model = _modelService?.GetAllModels().FirstOrDefault(m => m.ModelPath == modelPathToApply);
-                            if (model != null && model.MeshGroups != null && model.MeshGroups.Count > 0)
+                            // 延迟应用 MeshGroup 配置，确保模型先加载
+                            Core.Scheduler.DelayBySeconds(0.25f, () =>
                             {
-                                var meshGroupService = _serviceProvider?.GetService<IMeshGroupService>();
-                                if (meshGroupService != null)
+                                if (player?.Pawn?.IsValid == true)
                                 {
-                                    meshGroupService.LoadAndApplyPlayerMeshGroupsAsync(player, model.ModelId, teamName).GetAwaiter().GetResult();
-                                    logger?.LogDebug($"加载并应用 MeshGroup 配置: {player.Controller.PlayerName}");
+                                    var model = _modelService?.GetAllModels().FirstOrDefault(m => m.ModelPath == modelPathToApply);
+                                    if (model != null && model.MeshGroups != null && model.MeshGroups.Count > 0)
+                                    {
+                                        var meshGroupService = _serviceProvider?.GetService<IMeshGroupService>();
+                                        if (meshGroupService != null)
+                                        {
+                                            meshGroupService.LoadAndApplyPlayerMeshGroupsAsync(player, model.ModelId, teamName).GetAwaiter().GetResult();
+                                            logger?.LogDebug($"加载并应用 MeshGroup 配置: {player.Controller.PlayerName}");
+                                        }
+                                    }
                                 }
-                            }
+                            });
                         }
                     }
                     catch (Exception ex)
