@@ -5,6 +5,10 @@
   <p>集成经济系统、预览功能和直观菜单界面的综合性玩家模型管理插件</p>
 </div>
 
+<div align="center">
+  <p>⚠️ <strong>特别提示：</strong>该插件 99% 代码由 AI 编写，我本人未编写超过 100 行代码。如果你想反馈任何 BUG 或者建议，请先问 AI，再询问我。</p>
+</div>
+
 <p align="center">
   <img src="https://img.shields.io/badge/build-passing-brightgreen" alt="构建状态">
   <img src="https://img.shields.io/badge/.NET-10.0-blue" alt=".NET 版本">

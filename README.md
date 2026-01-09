@@ -5,6 +5,10 @@
   <p>A comprehensive player model management plugin with economy integration, preview system, and intuitive menu interface</p>
 </div>
 
+<div align="center">
+  <p>⚠️ <strong>Notice:</strong> 99% of this plugin's code was written by AI. I personally wrote less than 100 lines of code. If you want to report any bugs or suggestions, please ask AI first, then contact me.</p>
+</div>
+
 <p align="center">
   <img src="https://img.shields.io/badge/build-passing-brightgreen" alt="Build Status">
   <img src="https://img.shields.io/badge/.NET-10.0-blue" alt=".NET Version">
