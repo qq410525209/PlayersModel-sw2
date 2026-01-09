@@ -33,6 +33,7 @@
 ## ✨ Features
 
 ### 🎨 Core Features
+
 - **Multi-Team Support**: Separate models for CT, T, and universal (All) teams
 - **Economy Integration**: Purchase models using the Economy plugin's currency system
 - **Preview System**: 3D model preview before purchase (5-second display at 50 units)
@@ -41,6 +42,7 @@
 - **Default Models**: Automatic restoration to default models when unequipping
 
 ### 🎯 Menu System
+
 - **Four-Tier Menu Structure**:
   - Main Menu: Universal Models, CT Models, T Models, My Models
   - Category Menus: List of available models
@@ -48,6 +50,7 @@
   - Navigation: Easy back-and-forth navigation
 
 ### 🛠️ Admin Tools
+
 - Give credits to players
 - Grant models to players
 - Set player models directly
@@ -55,6 +58,7 @@
 - View player-owned models
 
 ### 🌐 Localization
+
 - Multi-language support (English, Simplified Chinese)
 - Player-specific language settings
 - Easy translation system
@@ -64,11 +68,13 @@
 ## 📦 Requirements
 
 ### Dependencies
+
 - **SwiftlyS2**: Latest version
 - **Economy Plugin**: For purchase functionality (optional but recommended)
 - **MySQL/MariaDB/PostgreSQL**: For data persistence
 
 ### System Requirements
+
 - **.NET 10.0** or higher
 - **CS2 Server** with SwiftlyS2 installed
 
@@ -76,24 +82,46 @@
 
 ## 🚀 Installation
 
-1. **Download** the latest release from the releases page
-2. **Extract** the plugin files to your SwiftlyS2 plugins directory:
+### 1. Install Required Dependency
+
+First, you need to install the **Economy Plugin** (required for credit-based purchases):
+
+📦 **Economy Plugin**: https://github.com/SwiftlyS2-Plugins/Economy
+
+Follow the Economy plugin's installation guide, especially:
+
+- Configure the database connection settings in Economy plugin
+- Ensure the Economy plugin is running properly
+
+### 2. Install PlayersModel Plugin
+
+1. **Download** the latest release of PlayersModel plugin
+2. **Extract** to your SwiftlyS2 plugins directory:
    ```
-   csgo/swiftly/plugins/PlayersModel/
+   csgo/addons/swiftly/plugins/PlayersModel/
    ```
-3. **Configure** the database connection in your SwiftlyS2 configuration
-4. **Restart** the server or load the plugin using SwiftlyS2 commands
+3. **Restart** the server or load the plugin using SwiftlyS2 commands
+
+### 3. Database Configuration Note
+
+> ⚠️ **Important**: PlayersModel uses the Economy plugin's database connection key `economyapi` by default.
+>
+> As long as you have properly configured the Economy plugin's database connection, PlayersModel will automatically use the same database connection - no additional configuration needed.
 
 ### Directory Structure
+
 ```
 PlayersModel/
-├── PlayersModel.dll          # Main plugin assembly
-├── Economy.Contract.dll      # Economy API contract
-├── config.jsonc              # Main configuration
-├── models.jsonc              # Model definitions
-└── translations/
-    ├── en.jsonc              # English translations
-    └── zh-CN.jsonc           # Simplified Chinese translations
+├── PlayersModel.dll              # Main plugin assembly
+├── Economy.Contract.dll          # Economy API contract
+└── resources/
+    ├── templates/                # Configuration templates
+    │   ├── config.jsonc          # Main configuration
+    │   └── models.jsonc          # Model definitions
+    └── translations/
+             # Translation files
+        ├── en.jsonc              # English translations
+        └── zh-CN.jsonc           # Simplified Chinese translations
 ```
 
 ---
@@ -110,30 +138,30 @@ PlayersModel/
     "Language": "",  // Leave empty to use player's framework language
     "EnablePurchaseSystem": true,
     "WalletKind": "credits",
-    
+  
     // Default model paths (used when unequipping)
     "DefaultCTModelPath": "characters/models/ctm_sas/ctm_sas.vmdl",
     "DefaultTModelPath": "characters/models/tm_phoenix/tm_phoenix.vmdl",
-    
+  
     "Permissions": {
       "AdminPermissions": ["root", "admin"],
       "VipPermissions": ["vip", "*.vip"]
     },
-    
+  
     "Menu": {
       "EnableSound": true,
       "ItemsPerPage": 5,
       "FreezePlayer": false,
       "AutoCloseDelay": 0.0
     },
-    
+  
     "Database": {
       "ConnectionKey": "economyapi",
       "OwnedModelsTable": "player_owned_models",
       "CurrentModelsTable": "player_current_models",
       "AutoCreateTables": true
     },
-    
+  
     "Commands": {
       "Player": {
         "Model": "model",
@@ -196,28 +224,29 @@ PlayersModel/
 
 ### Player Commands
 
-| Command | Description | Usage |
-|---------|-------------|-------|
-| `!model` | Open model selection menu | `!model` |
+| Command       | Description               | Usage                   |
+| ------------- | ------------------------- | ----------------------- |
+| `!model`    | Open model selection menu | `!model`              |
 | `!buymodel` | Purchase a specific model | `!buymodel <modelId>` |
-| `!balance` | Check your credit balance | `!balance` |
-| `!mymodels` | View your owned models | `!mymodels` |
+| `!balance`  | Check your credit balance | `!balance`            |
+| `!mymodels` | View your owned models    | `!mymodels`           |
 
 ### Admin Commands
 
-| Command | Description | Usage | Permission |
-|---------|-------------|-------|------------|
-| `!pm_givecredits` | Give credits to a player | `!pm_givecredits <player> <amount>` | Admin |
-| `!pm_givemodel` | Give a model to a player | `!pm_givemodel <player> <modelId>` | Admin |
-| `!pm_setmodel` | Set a player's model | `!pm_setmodel <player> <modelId>` | Admin |
-| `!pm_reload` | Reload configuration | `!pm_reload` | Admin |
-| `!pm_listmodels` | List player's owned models | `!pm_listmodels <player>` | Admin |
+| Command             | Description                | Usage                                 | Permission |
+| ------------------- | -------------------------- | ------------------------------------- | ---------- |
+| `!pm_givecredits` | Give credits to a player   | `!pm_givecredits <player> <amount>` | Admin      |
+| `!pm_givemodel`   | Give a model to a player   | `!pm_givemodel <player> <modelId>`  | Admin      |
+| `!pm_setmodel`    | Set a player's model       | `!pm_setmodel <player> <modelId>`   | Admin      |
+| `!pm_reload`      | Reload configuration       | `!pm_reload`                        | Admin      |
+| `!pm_listmodels`  | List player's owned models | `!pm_listmodels <player>`           | Admin      |
 
 ---
 
 ## 📱 Menu System
 
 ### Main Menu
+
 ```
 Player Model Selection
 ├── Universal Models    → Models for all teams
@@ -227,6 +256,7 @@ Player Model Selection
 ```
 
 ### Model Details Menu
+
 ```
 📦 Model Name
 ------------------
@@ -243,51 +273,55 @@ Team: CT
 The plugin automatically creates the following tables:
 
 ### player_owned_models
+
 Stores models owned by players.
 
-| Column | Type | Description |
-|--------|------|-------------|
-| steam_id | BIGINT | Player's Steam ID |
-| model_id | VARCHAR(64) | Model identifier |
-| purchased_at | TIMESTAMP | Purchase timestamp |
+| Column       | Type        | Description        |
+| ------------ | ----------- | ------------------ |
+| steam_id     | BIGINT      | Player's Steam ID  |
+| model_id     | VARCHAR(64) | Model identifier   |
+| purchased_at | TIMESTAMP   | Purchase timestamp |
 
 ### player_current_models
+
 Stores currently equipped models.
 
-| Column | Type | Description |
-|--------|------|-------------|
-| steam_id | BIGINT | Player's Steam ID |
-| model_path | VARCHAR(255) | Current model path |
-| arms_path | VARCHAR(255) | Current arms model path |
-| updated_at | TIMESTAMP | Last update timestamp |
+| Column     | Type         | Description             |
+| ---------- | ------------ | ----------------------- |
+| steam_id   | BIGINT       | Player's Steam ID       |
+| model_path | VARCHAR(255) | Current model path      |
+| arms_path  | VARCHAR(255) | Current arms model path |
+| updated_at | TIMESTAMP    | Last update timestamp   |
 
 ---
 
 ## 🔨 Building
 
 ### Prerequisites
+
 - .NET SDK 10.0 or higher
 - SwiftlyS2 development environment
 
 ### Build Steps
 
 1. **Clone the repository**:
+
    ```bash
    git clone https://github.com/YourUsername/PlayersModel.git
    cd PlayersModel
    ```
-
 2. **Build the project**:
+
    ```bash
    dotnet build -c Release
    ```
-
 3. **Publish the plugin**:
+
    ```bash
    dotnet publish -c Release
    ```
-
 4. **Output files** will be in:
+
    ```
    build/publish/
    ```

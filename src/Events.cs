@@ -114,7 +114,7 @@ public partial class PlayersModel
                                     if (meshGroupService != null)
                                     {
                                         meshGroupService.LoadAndApplyPlayerMeshGroupsAsync(player, model.ModelId, teamName).GetAwaiter().GetResult();
-                                        logger?.LogDebug($"加载并应用 MeshGroup 配置: {player.Controller.PlayerName}");
+                                        logger?.LogDebug(_translationService?.GetConsole("events.meshgroup_applied", player.Controller.PlayerName) ?? $"Loaded and applied MeshGroup config: {player.Controller.PlayerName}");
                                     }
                                 }
                             }
@@ -182,7 +182,7 @@ public partial class PlayersModel
                                     if (meshGroupService != null)
                                     {
                                         meshGroupService.LoadAndApplyPlayerMeshGroupsAsync(player, model.ModelId, teamName).GetAwaiter().GetResult();
-                                        logger?.LogDebug($"加载并应用 MeshGroup 配置: {player.Controller.PlayerName}");
+                                        logger?.LogDebug(_translationService?.GetConsole("events.meshgroup_applied", player.Controller.PlayerName) ?? $"Loaded and applied MeshGroup config: {player.Controller.PlayerName}");
                                     }
                                 }
                             }
@@ -219,7 +219,7 @@ public partial class PlayersModel
                 if (allPlayers.Count == 0) return;
                 
                 // 批量加载所有玩家的缓存（一次数据库查询）
-                var steamIds = allPlayers.Select(p => p.SteamID).ToList();
+                var steamIds = allPlayers.Select(p => p!.SteamID).ToList();
                 _modelCacheService?.BatchLoadPlayerCachesAsync(steamIds).GetAwaiter().GetResult();
                 
                 logger?.LogInformation(_translationService?.GetConsole("events.round_start_batch_loaded", allPlayers.Count) ?? $"Batch loaded {allPlayers.Count} player models");
@@ -254,6 +254,7 @@ public partial class PlayersModel
                         // 应用模型
                         if (!string.IsNullOrEmpty(modelPathToApply))
                         {
+                            if (player.Pawn == null) continue;
                             player.Pawn.SetModel(modelPathToApply);
                             logger?.LogInformation(_translationService?.GetConsole("events.round_start_applied", player.Controller.PlayerName) ?? $"Applied model on round start: {player.Controller.PlayerName}");
                             
@@ -269,7 +270,7 @@ public partial class PlayersModel
                                         if (meshGroupService != null)
                                         {
                                             meshGroupService.LoadAndApplyPlayerMeshGroupsAsync(player, model.ModelId, teamName).GetAwaiter().GetResult();
-                                            logger?.LogDebug($"加载并应用 MeshGroup 配置: {player.Controller.PlayerName}");
+                                            logger?.LogDebug(_translationService?.GetConsole("events.meshgroup_applied", player.Controller.PlayerName) ?? $"Loaded and applied MeshGroup config: {player.Controller.PlayerName}");
                                         }
                                     }
                                 }

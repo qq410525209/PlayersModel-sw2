@@ -565,11 +565,11 @@ public class DatabaseService : IDatabaseService
                 MeshGroups = meshGroupsData
             });
 
-            _logger.LogDebug($"更新 MeshGroup 配置: SteamID={steamId}, Team={team}, Data={meshGroupsData}");
+            _logger.LogDebug(_translation.GetConsole("database.meshgroup_updated", steamId, team, meshGroupsData) ?? $"Updated MeshGroup config: SteamID={steamId}, Team={team}, Data={meshGroupsData}");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"更新 MeshGroup 配置失败: SteamID={steamId}, Team={team}");
+            _logger.LogError(ex, _translation.GetConsole("database.meshgroup_update_failed", steamId, team) ?? $"Failed to update MeshGroup config: SteamID={steamId}, Team={team}");
         }
     }
 

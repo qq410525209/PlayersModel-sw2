@@ -74,6 +74,7 @@
   "events.round_start_applied": "Applied model on round start: {0}",
   "events.round_start_failed": "Failed to apply model on round start: {0}",
   "events.round_start_batch_loaded": "✓ Batch loaded {0} player models on round start",
+  "events.meshgroup_applied": "Loaded and applied MeshGroup config: {0}",
   
   // ========== Menu Service Messages ==========
   "menuservice.player_equipped": "Player {0} equipped model: {1}",
@@ -172,5 +173,25 @@
   "error.invalid_player": "Invalid player",
   "error.command_failed": "Command execution failed",
   "error.load_failed": "✗ Plugin load failed: {0}",
-  "error.stack_trace": "Stack trace: {0}"
+  "error.stack_trace": "Stack trace: {0}",
+  
+  // ========== MeshGroup Component Messages ==========
+  "database.meshgroup_updated": "Updated MeshGroup config: SteamID={0}, Team={1}, Data={2}",
+  "database.meshgroup_update_failed": "Failed to update MeshGroup config: SteamID={0}, Team={1}",
+  "meshgroup.pawn_invalid": "Cannot apply MeshGroup: Player {0} pawn is invalid",
+  "meshgroup.applied": "Applied MeshGroup: {0} = {1} to player {2}",
+  "meshgroup.apply_failed": "Failed to apply MeshGroup: {0}",
+  "meshgroup.existing_config_skip": "Player {0} already has MeshGroup config, skipping default",
+  "meshgroup.default_applied": "Applied default MeshGroup for player {0}: {1} -> {2}",
+  "meshgroup.default_apply_failed": "Failed to apply default MeshGroup, model: {0}",
+  "meshgroup.model_not_found": "Model not found: {0}",
+  "meshgroup.component_not_found": "MeshGroup component not found: {0}",
+  "meshgroup.option_not_found": "MeshGroup option not found: {0}",
+  "meshgroup.toggle_success": "Player {0} toggled MeshGroup: {1} -> {2} (Index: {3})",
+  "meshgroup.toggle_failed": "Failed to toggle MeshGroup option",
+  "meshgroup.no_config_skip": "Model {0} has no MeshGroup config, skipping load",
+  "meshgroup.using_all_team": "Using 'All' team MeshGroup config: {0}",
+  "meshgroup.loaded_applied": "Loaded and applied MeshGroup: {0} Index={1}",
+  "meshgroup.load_apply_failed": "Failed to load and apply MeshGroup config",
+  "meshgroup.deserialize_failed": "Failed to deserialize MeshGroup data: {0}"
 }

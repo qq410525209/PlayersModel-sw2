@@ -74,6 +74,7 @@
   "events.round_start_applied": "回合开始应用模型: {0}",
   "events.round_start_failed": "回合开始应用模型失败: {0}",
   "events.round_start_batch_loaded": "✓ 回合开始批量加载 {0} 个玩家的模型数据",
+  "events.meshgroup_applied": "加载并应用 MeshGroup 配置: {0}",
   
   // ========== 菜单服务消息 ==========
   "menuservice.player_equipped": "玩家 {0} 装备模型: {1}",
@@ -172,5 +173,25 @@
   "error.invalid_player": "无效的玩家",
   "error.command_failed": "命令执行失败",
   "error.load_failed": "✗ 插件加载失败: {0}",
-  "error.stack_trace": "堆栈跟踪: {0}"
+  "error.stack_trace": "堆栈跟踪: {0}",
+  
+  // ========== MeshGroup 组件消息 ==========
+  "database.meshgroup_updated": "更新 MeshGroup 配置: SteamID={0}, Team={1}, Data={2}",
+  "database.meshgroup_update_failed": "更新 MeshGroup 配置失败: SteamID={0}, Team={1}",
+  "meshgroup.pawn_invalid": "无法应用 MeshGroup: 玩家 {0} 的 Pawn 无效",
+  "meshgroup.applied": "已应用 MeshGroup: {0} = {1} 到玩家 {2}",
+  "meshgroup.apply_failed": "应用 MeshGroup 失败: {0}",
+  "meshgroup.existing_config_skip": "玩家 {0} 已有 MeshGroup 配置，跳过默认值应用",
+  "meshgroup.default_applied": "为玩家 {0} 应用默认 MeshGroup: {1} -> {2}",
+  "meshgroup.default_apply_failed": "应用默认 MeshGroup 失败，模型: {0}",
+  "meshgroup.model_not_found": "模型未找到: {0}",
+  "meshgroup.component_not_found": "MeshGroup 组件未找到: {0}",
+  "meshgroup.option_not_found": "MeshGroup 选项未找到: {0}",
+  "meshgroup.toggle_success": "玩家 {0} 切换 MeshGroup: {1} -> {2} (Index: {3})",
+  "meshgroup.toggle_failed": "切换 MeshGroup 选项失败",
+  "meshgroup.no_config_skip": "模型 {0} 没有 MeshGroup 配置，跳过加载",
+  "meshgroup.using_all_team": "使用 'All' team 的 MeshGroup 配置: {0}",
+  "meshgroup.loaded_applied": "从数据库加载并应用 MeshGroup: {0} Index={1}",
+  "meshgroup.load_apply_failed": "加载并应用 MeshGroup 配置失败",
+  "meshgroup.deserialize_failed": "反序列化 MeshGroup 数据失败: {0}"
 }

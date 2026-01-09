@@ -90,7 +90,7 @@ public class MeshGroupService : IMeshGroupService
             var pawn = player.Pawn;
             if (pawn?.IsValid != true)
             {
-                _logger.LogWarning($"无法应用 MeshGroup: 玩家 {player.Controller.PlayerName} 的 Pawn 无效");
+                _logger.LogWarning(_translation.GetConsole("meshgroup.pawn_invalid", player.Controller.PlayerName) ?? $"Cannot apply MeshGroup: Player {player.Controller.PlayerName} pawn is invalid");
                 return;
             }
 
@@ -103,13 +103,13 @@ public class MeshGroupService : IMeshGroupService
                 if (pawn?.IsValid == true)
                 {
                     pawn.AcceptInput("SetBodyGroup", activator: pawn, caller: pawn, value: value);
-                    _logger.LogDebug($"已应用 MeshGroup: {bodyGroupName} = {index} 到玩家 {player.Controller.PlayerName}");
+                    _logger.LogDebug(_translation.GetConsole("meshgroup.applied", bodyGroupName, index, player.Controller.PlayerName) ?? $"Applied MeshGroup: {bodyGroupName} = {index} to player {player.Controller.PlayerName}");
                 }
             });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"应用 MeshGroup 失败: {bodyGroupName}");
+            _logger.LogError(ex, _translation.GetConsole("meshgroup.apply_failed", bodyGroupName) ?? $"Failed to apply MeshGroup: {bodyGroupName}");
         }
     }
 
@@ -124,14 +124,15 @@ public class MeshGroupService : IMeshGroupService
         try
         {
             var steamId = player.SteamID;
-            var teamName = model.Team;
+            // 使用模型配置的 Team，这样 All 类型的模型可以跨阵营共享配置
+            var teamName = model.Team == "Both" ? "All" : model.Team;
             
             // 先检查数据库中是否已有配置
             var existingData = await _databaseService.GetPlayerMeshGroupsAsync(steamId, teamName);
             if (!string.IsNullOrEmpty(existingData))
             {
                 // 数据库中已有配置，直接返回，不应用默认值
-                _logger.LogDebug($"玩家 {player.Controller.PlayerName} 已有 MeshGroup 配置，跳过默认值应用");
+                _logger.LogDebug(_translation.GetConsole("meshgroup.existing_config_skip", player.Controller.PlayerName) ?? $"Player {player.Controller.PlayerName} already has MeshGroup config, skipping default");
                 return;
             }
             
@@ -155,7 +156,7 @@ public class MeshGroupService : IMeshGroupService
                     // 记录玩家选择
                     _playerMeshGroups[steamId][meshGroup.ComponentId] = defaultOption.Index;
                     
-                    _logger.LogInformation($"为玩家 {player.Controller.PlayerName} 应用默认 MeshGroup: {meshGroup.DisplayName} -> {defaultOption.DisplayName}");
+                    _logger.LogInformation(_translation.GetConsole("meshgroup.default_applied", player.Controller.PlayerName, meshGroup.DisplayName, defaultOption.DisplayName) ?? $"Applied default MeshGroup for player {player.Controller.PlayerName}: {meshGroup.DisplayName} -> {defaultOption.DisplayName}");
                 }
             }
 
@@ -165,7 +166,7 @@ public class MeshGroupService : IMeshGroupService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"应用默认 MeshGroup 失败，模型: {model.ModelId}");
+            _logger.LogError(ex, _translation.GetConsole("meshgroup.default_apply_failed", model.ModelId) ?? $"Failed to apply default MeshGroup, model: {model.ModelId}");
         }
     }
 
@@ -188,21 +189,21 @@ public class MeshGroupService : IMeshGroupService
             var model = _modelService.GetModelById(modelId);
             if (model == null)
             {
-                _logger.LogWarning($"模型未找到: {modelId}");
+                _logger.LogWarning(_translation.GetConsole("meshgroup.model_not_found", modelId) ?? $"Model not found: {modelId}");
                 return false;
             }
 
             var meshGroup = model.MeshGroups?.FirstOrDefault(mg => mg.ComponentId == componentId);
             if (meshGroup == null)
             {
-                _logger.LogWarning($"MeshGroup 组件未找到: {componentId}");
+                _logger.LogWarning(_translation.GetConsole("meshgroup.component_not_found", componentId) ?? $"MeshGroup component not found: {componentId}");
                 return false;
             }
 
             var option = meshGroup.Options.FirstOrDefault(o => o.OptionId == optionId);
             if (option == null)
             {
-                _logger.LogWarning($"MeshGroup 选项未找到: {optionId}");
+                _logger.LogWarning(_translation.GetConsole("meshgroup.option_not_found", optionId) ?? $"MeshGroup option not found: {optionId}");
                 return false;
             }
 
@@ -219,15 +220,16 @@ public class MeshGroupService : IMeshGroupService
 
             // 保存到数据库
             var meshGroupsData = GetPlayerMeshGroupsData(steamId);
-            var teamName = model.Team;
+            // 使用模型配置的 Team，这样 All/Both 类型的模型可以跨阵营共享配置
+            var teamName = model.Team == "Both" ? "All" : model.Team;
             await _databaseService.UpdatePlayerMeshGroupsAsync(steamId, teamName, meshGroupsData);
 
-            _logger.LogInformation($"玩家 {player.Controller.PlayerName} 切换 MeshGroup: {meshGroup.DisplayName} -> {option.DisplayName} (Index: {option.Index})");
+            _logger.LogInformation(_translation.GetConsole("meshgroup.toggle_success", player.Controller.PlayerName, meshGroup.DisplayName, option.DisplayName, option.Index) ?? $"Player {player.Controller.PlayerName} toggled MeshGroup: {meshGroup.DisplayName} -> {option.DisplayName} (Index: {option.Index})");
             return true;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"切换 MeshGroup 选项失败");
+            _logger.LogError(ex, _translation.GetConsole("meshgroup.toggle_failed") ?? "Failed to toggle MeshGroup option");
             return false;
         }
     }
@@ -241,10 +243,24 @@ public class MeshGroupService : IMeshGroupService
         {
             var model = _modelService.GetModelById(modelId);
             if (model?.MeshGroups == null || model.MeshGroups.Count == 0)
+            {
+                _logger.LogDebug(_translation.GetConsole("meshgroup.no_config_skip", modelId) ?? $"Model {modelId} has no MeshGroup config, skipping load");
                 return;
+            }
 
             // 从数据库加载 MeshGroup 配置
             var meshGroupsData = await _databaseService.GetPlayerMeshGroupsAsync(player.SteamID, team);
+            
+            // 如果用当前阵营找不到，尝试用 "All" 查询
+            if (string.IsNullOrEmpty(meshGroupsData) && team != "All")
+            {
+                meshGroupsData = await _databaseService.GetPlayerMeshGroupsAsync(player.SteamID, "All");
+                if (!string.IsNullOrEmpty(meshGroupsData))
+                {
+                    _logger.LogDebug(_translation.GetConsole("meshgroup.using_all_team", player.Controller.PlayerName) ?? $"Using 'All' team MeshGroup config: {player.Controller.PlayerName}");
+                }
+            }
+            
             if (string.IsNullOrEmpty(meshGroupsData))
                 return;
 
@@ -260,13 +276,13 @@ public class MeshGroupService : IMeshGroupService
                 if (meshGroup != null)
                 {
                     ApplyMeshGroupToPlayer(player, meshGroup.BodyGroupName, kvp.Value);
-                    _logger.LogDebug($"从数据库加载并应用 MeshGroup: {meshGroup.DisplayName} Index={kvp.Value}");
+                    _logger.LogDebug(_translation.GetConsole("meshgroup.loaded_applied", meshGroup.DisplayName, kvp.Value) ?? $"Loaded and applied MeshGroup: {meshGroup.DisplayName} Index={kvp.Value}");
                 }
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"加载并应用 MeshGroup 配置失败");
+            _logger.LogError(ex, _translation.GetConsole("meshgroup.load_apply_failed") ?? "Failed to load and apply MeshGroup config");
         }
     }
 
@@ -328,7 +344,7 @@ public class MeshGroupService : IMeshGroupService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"反序列化 MeshGroup 数据失败: {meshGroupsData}");
+            _logger.LogError(ex, _translation.GetConsole("meshgroup.deserialize_failed", meshGroupsData) ?? $"Failed to deserialize MeshGroup data: {meshGroupsData}");
         }
 
         return result;

@@ -34,7 +34,6 @@
     <Content Include="resources/templates/**/*;resources/translations/**/*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <!-- 复制 Economy.Contract.dll 到 exports 目录 -->
     <Content Include="Economy.Contract.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>resources\exports\Economy.Contract.dll</Link>
