@@ -32,7 +32,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="resources/templates/**/*;resources/translations/**/*">
+    <Content Include="resources/templates/**/*;resources/translations/**/*;resources/gamedata/**/*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Economy.Contract.dll">
