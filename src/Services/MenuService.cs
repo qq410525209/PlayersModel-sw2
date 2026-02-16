@@ -240,22 +240,22 @@ public class MenuService : IMenuService
         // 根据状态显示不同按钮 - ButtonMenuOption，操作完成后菜单保持打开
         if (isEquipped)
         {
-            var unequipButton = new ButtonMenuOption(OptionUnequip);
+            var unequipButton = new ButtonMenuOption(OptionUnequip)
+            {
+                CloseAfterClick = true  // 操作后关闭菜单，让用户可以正常返回上级
+            };
             unequipButton.Click += async (sender, args) =>
             {
                 await UnequipModelAsync(args.Player!, model.Team);
-                // 刷新当前菜单，显示更新后的状态
-                var refreshedMenu = await BuildModelDetailMenuAsync(args.Player!, modelId);
-                _core.Scheduler.DelayBySeconds(0.1f, () =>
-                {
-                    _core.MenusAPI.OpenMenuForPlayer(args.Player!, refreshedMenu);
-                });
             };
             builder.AddOption(unequipButton);
         }
         else if (owns || model.Price == 0)
         {
-            var equipButton = new ButtonMenuOption(OptionEquip);
+            var equipButton = new ButtonMenuOption(OptionEquip)
+            {
+                CloseAfterClick = true  // 操作后关闭菜单，让用户可以正常返回上级
+            };
             equipButton.Click += async (sender, args) =>
             {
                 var success = _modelService.ApplyModelToPlayer(args.Player!, modelId);
@@ -263,12 +263,6 @@ public class MenuService : IMenuService
                 {
                     _logger.LogInformation(_translation.GetConsole("menuservice.player_equipped", args.Player!.Controller.PlayerName, model.DisplayName));
                 }
-                // 刷新当前菜单，显示更新后的状态
-                var refreshedMenu = await BuildModelDetailMenuAsync(args.Player!, modelId);
-                _core.Scheduler.DelayBySeconds(0.1f, () =>
-                {
-                    _core.MenusAPI.OpenMenuForPlayer(args.Player!, refreshedMenu);
-                });
             };
             builder.AddOption(equipButton);
         }
@@ -276,20 +270,14 @@ public class MenuService : IMenuService
         {
             var walletKind = _config.CurrentValue.WalletKind;
             var buyText = string.Format(_translation["menu.option.buy_model"], $"{model.Price} {walletKind}");
-            var buyButton = new ButtonMenuOption(buyText);
+            var buyButton = new ButtonMenuOption(buyText)
+            {
+                CloseAfterClick = true  // 操作后关闭菜单，让用户可以正常返回上级
+            };
             buyButton.Click += async (sender, args) =>
             {
                 var (success, message) = await _modelService.PurchaseModelAsync(args.Player!, modelId);
                 _logger.LogInformation($"{message}");
-                // 如果购买成功，刷新菜单显示装备按钮
-                if (success)
-                {
-                    var refreshedMenu = await BuildModelDetailMenuAsync(args.Player!, modelId);
-                    _core.Scheduler.DelayBySeconds(0.1f, () =>
-                    {
-                        _core.MenusAPI.OpenMenuForPlayer(args.Player!, refreshedMenu);
-                    });
-                }
             };
             builder.AddOption(buyButton);
         }
@@ -366,7 +354,10 @@ public class MenuService : IMenuService
             foreach (var option in meshGroup.Options)
             {
                 var capturedOptionId = option.OptionId;
-                var button = new ButtonMenuOption(option.DisplayName);
+                var button = new ButtonMenuOption(option.DisplayName)
+                {
+                    CloseAfterClick = true  // 选择后关闭菜单，让用户可以返回上级重新查看
+                };
                 button.Click += async (sender, args) =>
                 {
                     await _meshGroupService.ToggleMeshGroupOption(args.Player!, modelId, componentId, capturedOptionId);
