@@ -66,6 +66,7 @@
   // ========== 事件消息 ==========
   "events.precache_model": "预缓存模型: {0}",
   "events.precache_arms": "预缓存手臂模型: {0}",
+  "events.precache_summary": "✓ 预缓存完成: 成功 {0} 个, 失败 {1} 个{2}",
   "events.player_join_applied": "玩家进入应用模型: {0}",
   "events.player_join_failed": "玩家进入应用模型失败: {0}",
   "events.player_spawn_applied": "玩家重生应用模型: {0}",

@@ -66,6 +66,7 @@
   // ========== Event Messages ==========
   "events.precache_model": "Precaching model: {0}",
   "events.precache_arms": "Precaching arms model: {0}",
+  "events.precache_summary": "✓ Precache completed: {0} succeeded, {1} failed{2}",
   "events.player_join_applied": "Applied model on join: {0}",
   "events.player_join_failed": "Failed to apply model on join: {0}",
   "events.player_spawn_applied": "Applied model on spawn: {0}",

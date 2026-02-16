@@ -41,19 +41,37 @@ public partial class PlayersModel
             var models = _modelService.GetAllModels();
             var logger = _serviceProvider?.GetService<ILogger<PlayersModel>>();
             
+            int successCount = 0;
+            int failCount = 0;
+            var failedModels = new List<string>();
+            
             foreach (var model in models)
             {
-                if (!string.IsNullOrEmpty(model.ModelPath))
+                try
                 {
-                    @event.AddItem(model.ModelPath);
-                    logger?.LogInformation(_translationService?.GetConsole("events.precache_model", model.ModelPath) ?? $"Precaching model: {model.ModelPath}");
+                    if (!string.IsNullOrEmpty(model.ModelPath))
+                    {
+                        @event.AddItem(model.ModelPath);
+                       successCount++;
+                     }
+                    if (!string.IsNullOrEmpty(model.ArmsPath))
+                    {
+                        @event.AddItem(model.ArmsPath);
+                        successCount++;
+                    }
                 }
-                if (!string.IsNullOrEmpty(model.ArmsPath))
+                catch (Exception)
                 {
-                    @event.AddItem(model.ArmsPath);
-                    logger?.LogInformation(_translationService?.GetConsole("events.precache_arms", model.ArmsPath) ?? $"Precaching arms model: {model.ArmsPath}");
+                    failCount++;
+                    failedModels.Add(model.DisplayName ?? model.ModelId);
                 }
             }
+            
+            var failedInfo = failCount > 0 ? $", 失败的模型: {string.Join(", ", failedModels)}" : "";
+            logger?.LogInformation(
+                _translationService?.GetConsole("events.precache_summary", successCount, failCount, failedInfo) 
+                ?? $"预缓存完成: 成功 {successCount} 个, 失败 {failCount} 个{failedInfo}"
+            );
         };
 
         // 玩家进入服务器事件
