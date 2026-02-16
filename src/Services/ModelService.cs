@@ -46,6 +46,11 @@ public interface IModelService
     /// 购买模型
     /// </summary>
     Task<(bool success, string message)> PurchaseModelAsync(IPlayer player, string modelId);
+    
+    /// <summary>
+    /// 设置模型Hook服务
+    /// </summary>
+    void SetModelHookService(IModelHookService modelHookService);
 }
 
 /// <summary>
@@ -63,6 +68,8 @@ public class ModelService : IModelService
     private readonly IModelCacheService _modelCache;
     private IMeshGroupService? _meshGroupService;
 
+    private IModelHookService? _modelHookService;
+
     public ModelService(
         ISwiftlyCore core,
         IOptionsMonitor<PluginConfig> config,
@@ -79,6 +86,14 @@ public class ModelService : IModelService
         _modelCache = modelCache;
         _logger = logger;
         _translation = translation;
+    }
+
+    /// <summary>
+    /// 设置模型Hook服务
+    /// </summary>
+    public void SetModelHookService(IModelHookService modelHookService)
+    {
+        _modelHookService = modelHookService;
     }
 
     /// <summary>
@@ -293,27 +308,35 @@ public class ModelService : IModelService
                     }
                 }
                 
-                // 应用模型
+                // 应用模型 - 使用 Hook 服务替代直接 SetModel
                 if (!string.IsNullOrEmpty(modelPathToApply))
                 {
-                    var pawn = player.Pawn;
-                    var pathToApply = modelPathToApply;
-                    _core.Scheduler.DelayBySeconds(0.01f, () =>
+                    // 标记玩家的模型待应用（通过 Hook 服务处理）
+                    if (_modelHookService != null)
                     {
-                        if (pawn?.IsValid == true)
+                        _modelHookService.MarkPlayerForModelApply(player.SteamID, modelPathToApply, 0.05f);
+                    }
+                    else
+                    {
+                        // 降级方案：如果 Hook 服务未初始化，直接应用
+                        var pawn = player.Pawn;
+                        var pathToApply = modelPathToApply;
+                        _core.Scheduler.DelayBySeconds(0.05f, () =>
                         {
-                            pawn.SetModel(pathToApply);
-                            
-                            // 应用 MeshGroup 默认配置
-                            if (_meshGroupService != null && model.MeshGroups != null && model.MeshGroups.Count > 0)
-                            {
-                                _core.Scheduler.DelayBySeconds(0.05f, () =>
-                                {
-                                    _meshGroupService.ApplyDefaultMeshGroups(player, model).GetAwaiter().GetResult();
-                                });
-                            }
-                        }
-                    });
+                            if (pawn?.IsValid == true)
+                                pawn.SetModel(pathToApply);
+                        });
+                    }
+                    
+                    // 应用 MeshGroup 默认配置
+                    if (_meshGroupService != null && model.MeshGroups != null && model.MeshGroups.Count > 0)
+                    {
+                        _core.Scheduler.DelayBySeconds(0.1f, () =>
+                        {
+                            _meshGroupService.ApplyDefaultMeshGroups(player, model).GetAwaiter().GetResult();
+                        });
+                    }
+                    
                     _logger.LogInformation(_translation.GetConsole("modelservice.applied_now", player.Controller.PlayerName, model.DisplayName));
                 }
             }

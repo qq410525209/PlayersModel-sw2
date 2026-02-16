@@ -63,7 +63,7 @@ public partial class PlayersModel
             if (playerManager == null) return;
             var player = playerManager.GetPlayer(@event.PlayerId);
             // 跳过BOT
-            if (player == null || !player.IsValid || player.SteamID == 0 || player.SteamID < 70000000000000000) return;
+            if (player == null || !player.IsValid || player.SteamID == 0 || player.SteamID < 80000000000000000) return;
 
             Core.Scheduler.DelayBySeconds(1.0f, () =>
             {

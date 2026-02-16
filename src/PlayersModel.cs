@@ -21,14 +21,13 @@ namespace PlayersModel
     {
         private IEconomyAPIv1? _economyAPI;
         private IInterfaceManager? _interfaceManager;
-        private IServiceProvider? _serviceProvider;
-        private IDatabaseService? _databaseService;
-        private IModelService? _modelService;
-        private IModelCacheService? _modelCacheService;
-        private IMeshGroupService? _meshGroupService;
-        private ITranslationService? _translationService;
-
-        /// <summary>
+    private IServiceProvider? _serviceProvider;
+    private IDatabaseService? _databaseService;
+    private IModelService? _modelService;
+    private IModelCacheService? _modelCacheService;
+    private IMeshGroupService? _meshGroupService;
+    private ITranslationService? _translationService;
+    private NativeHookService? _nativeHookService;        /// <summary>
         /// 获取格式化的插件前缀 [PluginName]
         /// </summary>
         private string PluginPrefix
@@ -92,8 +91,11 @@ namespace PlayersModel
                 // 注册命令
                 RegisterCommands();
 
-                // 注册事件
+                // 注册事件 - 在这里会初始化 NativeHookService
                 InitializeEvents();
+                
+                // 初始化原生Hook
+                _nativeHookService?.InitializeHooks();
 
                 Console.WriteLine($"{PluginPrefix} {_translationService?.GetConsole("plugin.loaded") ?? "Plugin loaded successfully!"}");
                 
@@ -165,6 +167,8 @@ namespace PlayersModel
             services.AddSingleton<ITranslationService, TranslationService>();
             services.AddSingleton<IPreviewService, PreviewService>();
             services.AddSingleton<IMenuService, MenuService>();
+            services.AddSingleton<IModelHookService, ModelHookService>();
+            services.AddSingleton<NativeHookService>();
 
             _serviceProvider = services.BuildServiceProvider();
 
@@ -173,6 +177,16 @@ namespace PlayersModel
             _modelService = _serviceProvider.GetRequiredService<IModelService>();
             _modelCacheService = _serviceProvider.GetRequiredService<IModelCacheService>();
             _meshGroupService = _serviceProvider.GetRequiredService<IMeshGroupService>();
+            
+            // 初始化模型Hook服务并注入到ModelService
+            var modelHookService = _serviceProvider.GetRequiredService<IModelHookService>();
+            _modelService.SetModelHookService(modelHookService);
+            
+            // 初始化原生Hook服务
+            _nativeHookService = _serviceProvider.GetRequiredService<NativeHookService>();
+            
+            // 在事件初始化后启动Hook
+            modelHookService.InitializeHooks();
 
             Console.WriteLine($"{PluginPrefix} {_translationService?.GetConsole("system.di_initialized") ?? "Dependency injection initialized"}");
         }
