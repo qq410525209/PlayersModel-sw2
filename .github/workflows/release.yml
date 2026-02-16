@@ -1,0 +1,235 @@
+name: Build and Release
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    paths-ignore:
+      - '**.md'
+      - 'LICENSE'
+      - '.gitignore'
+  pull_request:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      repository-projects: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      
+      - name: Restore dependencies
+        run: dotnet restore
+      
+      - name: Get current version
+        id: get_version
+        run: |
+          # 从csproj文件中提取版本号，如果没有则使用日期时间
+          if grep -q "<Version>" PlayersModel.csproj; then
+            VERSION=$(grep -oP '<Version>\K[^<]+' PlayersModel.csproj)
+          else
+            VERSION="1.0.0"
+          fi
+          echo "current_version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Current version: $VERSION"
+      
+      - name: Calculate new version
+        id: new_version
+        run: |
+          CURRENT="${{ steps.get_version.outputs.current_version }}"
+          
+          # 获取最新的tag
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+          LATEST_TAG=${LATEST_TAG#v}
+          
+          # 解析版本号
+          IFS='.' read -ra CURRENT_PARTS <<< "$CURRENT"
+          MAJOR=${CURRENT_PARTS[0]:-1}
+          MINOR=${CURRENT_PARTS[1]:-0}
+          PATCH=${CURRENT_PARTS[2]:-0}
+          
+          # 检查是否需要增加版本号
+          if git describe --exact-match --tags HEAD 2>/dev/null; then
+            echo "Current commit already has a tag, skipping version bump"
+            NEW_VERSION="$CURRENT"
+          else
+            # 增加补丁版本号
+            PATCH=$((PATCH + 1))
+            NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}"
+          fi
+          
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "tag_name=v$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "New version: $NEW_VERSION"
+      
+      - name: Update version in csproj
+        run: |
+          NEW_VERSION="${{ steps.new_version.outputs.new_version }}"
+          
+          # 更新或添加Version标签
+          if grep -q "<Version>" PlayersModel.csproj; then
+            sed -i "s|<Version>.*</Version>|<Version>$NEW_VERSION</Version>|" PlayersModel.csproj
+          else
+            sed -i "s|</PropertyGroup>|  <Version>$NEW_VERSION</Version>\n  </PropertyGroup>|" PlayersModel.csproj
+          fi
+          
+          echo "Updated PlayersModel.csproj with version $NEW_VERSION"
+          cat PlayersModel.csproj | grep -A2 -B2 Version || true
+      
+      - name: Commit version update
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          
+          if git diff --quiet PlayersModel.csproj; then
+            echo "No version changes to commit"
+          else
+            git add PlayersModel.csproj
+            git commit -m "chore: bump version to ${{ steps.new_version.outputs.new_version }}"
+            git push
+          fi
+      
+      - name: Build project
+        run: dotnet build --configuration Release
+      
+      - name: Publish project
+        run: dotnet publish --configuration Release --no-build
+      
+      - name: Prepare release artifact
+        run: |
+          mkdir -p release-artifacts
+          
+          # 复制构建输出到发布目录
+          if [ -d "build/publish/PlayersModel" ]; then
+            cp -r build/publish/PlayersModel release-artifacts/
+          elif [ -d "build/net10.0" ]; then
+            mkdir -p release-artifacts/PlayersModel
+            cp -r build/net10.0/* release-artifacts/PlayersModel/
+          else
+            echo "Error: Build output not found"
+            exit 1
+          fi
+          
+          # 创建ZIP文件
+          cd release-artifacts
+          zip -r PlayersModel.zip PlayersModel
+          ls -lh PlayersModel.zip
+          cd ..
+      
+      - name: Generate release notes
+        id: release_notes
+        run: |
+          VERSION="${{ steps.new_version.outputs.tag_name }}"
+          REPO_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}"
+          
+          # 获取上一个tag
+          if PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null); then
+            TITLE="PlayersModel $VERSION"
+            COMMIT_RANGE="${PREVIOUS_TAG}..HEAD"
+          else
+            TITLE="PlayersModel $VERSION (Initial Release)"
+            COMMIT_RANGE="HEAD"
+          fi
+          
+          # 生成变更日志
+          DESCRIPTION="## 🚀 What's Changed"$'\n\n'
+          
+          while IFS=$'\t' read -r COMMIT_SHA COMMIT_SUBJECT; do
+            [ -z "$COMMIT_SHA" ] && continue
+            
+            SHORT_SHA="${COMMIT_SHA:0:7}"
+            COMMIT_URL="${REPO_URL}/commit/${COMMIT_SHA}"
+            FILE_LINKS=""
+            
+            # 获取修改的文件
+            while IFS= read -r FILE_PATH; do
+              [ -z "$FILE_PATH" ] && continue
+              FILE_URL="${REPO_URL}/blob/${COMMIT_SHA}/${FILE_PATH}"
+              FILE_MD_LINK="[\`${FILE_PATH}\`](${FILE_URL})"
+              
+              if [ -z "$FILE_LINKS" ]; then
+                FILE_LINKS="$FILE_MD_LINK"
+              else
+                FILE_LINKS="${FILE_LINKS}, ${FILE_MD_LINK}"
+              fi
+            done < <(git show --pretty="" --name-only --diff-filter=AMR "$COMMIT_SHA")
+            
+            LINE="- ${COMMIT_SUBJECT} ([\`${SHORT_SHA}\`](${COMMIT_URL}))"
+            if [ -n "$FILE_LINKS" ]; then
+              LINE="${LINE} - ${FILE_LINKS}"
+            fi
+            
+            DESCRIPTION="${DESCRIPTION}${LINE}"$'\n'
+          done < <(git log "${COMMIT_RANGE}" --pretty=format:'%H%x09%s')
+          
+          if [ -z "$(echo "$DESCRIPTION" | grep -v "What's Changed")" ]; then
+            DESCRIPTION="${DESCRIPTION}- No significant changes in this release."$'\n'
+          fi
+          
+          DESCRIPTION="${DESCRIPTION}"$'\n'"## 📦 Installation"$'\n\n'
+          DESCRIPTION="${DESCRIPTION}"'1. Download `PlayersModel.zip`'$'\n'
+          DESCRIPTION="${DESCRIPTION}"'2. Extract to your SwiftlyS2 plugins directory'$'\n'
+          DESCRIPTION="${DESCRIPTION}"'3. Restart your server'$'\n'
+          
+          # 保存到文件
+          echo "$TITLE" > release_title.txt
+          echo "$DESCRIPTION" > release_description.txt
+          
+          echo "Release notes generated"
+      
+      - name: Create Git Tag
+        run: |
+          TAG_NAME="${{ steps.new_version.outputs.tag_name }}"
+          
+          if git rev-parse "$TAG_NAME" >/dev/null 2>&1; then
+            echo "Tag $TAG_NAME already exists"
+          else
+            git tag "$TAG_NAME"
+            git push origin "$TAG_NAME"
+            echo "Created and pushed tag $TAG_NAME"
+          fi
+      
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TITLE=$(cat release_title.txt)
+          DESCRIPTION=$(cat release_description.txt)
+          TAG_NAME="${{ steps.new_version.outputs.tag_name }}"
+          
+          # 检查release是否已存在
+          if gh release view "$TAG_NAME" >/dev/null 2>&1; then
+            echo "Release $TAG_NAME already exists, deleting..."
+            gh release delete "$TAG_NAME" --yes || true
+          fi
+          
+          # 创建新release
+          gh release create "$TAG_NAME" \
+            --title "$TITLE" \
+            --notes "$DESCRIPTION" \
+            release-artifacts/PlayersModel.zip
+          
+          echo "✅ Release $TAG_NAME created successfully!"
+      
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: PlayersModel-${{ steps.new_version.outputs.new_version }}
+          path: release-artifacts/PlayersModel.zip
+          retention-days: 30
