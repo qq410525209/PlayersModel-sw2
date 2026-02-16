@@ -133,8 +133,53 @@ public partial class PlayersModel
         Core.GameEvent.HookPost<EventPlayerSpawn>((@event) =>
         {
             var player = @event.UserIdPlayer;
-            // 跳过无效玩家和BOT
-            if (player == null || !player.IsValid || player.IsFakeClient) return HookResult.Continue;
+            if (player == null || !player.IsValid) return HookResult.Continue;
+
+            // 处理BOT随机模型
+            if (player.IsFakeClient)
+            {
+                var config = _serviceProvider?.GetService<IOptionsMonitor<PluginConfig>>();
+                if (config?.CurrentValue.EnableBotRandomModel == true)
+                {
+                    Core.Scheduler.DelayBySeconds(0.2f, () =>
+                    {
+                        if (!player.IsValid || player.Pawn?.IsValid != true || _modelService == null) return;
+                        
+                        try
+                        {
+                            // 获取BOT当前阵营
+                            var currentTeam = player.Controller.TeamNum;
+                            var teamName = currentTeam == 2 ? "T" : currentTeam == 3 ? "CT" : "";
+                            
+                            if (string.IsNullOrEmpty(teamName)) return;
+                            
+                            // 获取符合条件的模型列表
+                            var availableModels = _modelService.GetAllModels()
+                                .Where(m => (m.Team == teamName || m.Team == "All") && 
+                                           (!config.CurrentValue.BotOnlyFreeModels || m.Price == 0))
+                                .ToList();
+                            
+                            if (availableModels.Count > 0)
+                            {
+                                // 随机选择一个模型
+                                var random = new Random();
+                                var selectedModel = availableModels[random.Next(availableModels.Count)];
+                                
+                                // 应用模型
+                                player.Pawn.SetModel(selectedModel.ModelPath);
+                                var logger = _serviceProvider?.GetService<ILogger<PlayersModel>>();
+                                logger?.LogDebug($"Applied random model to BOT {player.Controller.PlayerName}: {selectedModel.DisplayName}");
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            var logger = _serviceProvider?.GetService<ILogger<PlayersModel>>();
+                            logger?.LogError(ex, $"Failed to apply random model to BOT: {player?.Controller.PlayerName}");
+                        }
+                    });
+                }
+                return HookResult.Continue;
+            }
 
             Core.Scheduler.DelayBySeconds(0.1f, () =>
             {

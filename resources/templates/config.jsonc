@@ -26,6 +26,14 @@
     // 默认 T 模型路径 (卸载模型时恢复)
     "DefaultTModelPath": "characters/models/tm_phoenix/tm_phoenix.vmdl",
     
+    // 是否为BOT启用随机模型 (BOT重生时会随机装备一个模型)
+    "EnableBotRandomModel": false,
+    
+    // BOT是否只使用免费模型 
+    // true = 仅使用价格为0的模型
+    // false = 可以使用所有模型
+    "BotOnlyFreeModels": true,
+    
     // 权限设置
     "Permissions": {
       // 管理员权限列表 (拥有其中任一权限即可使用管理员命令)

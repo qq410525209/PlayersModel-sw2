@@ -48,6 +48,16 @@ public class PluginConfig
     public string DefaultTModelPath { get; set; } = "characters/models/tm_phoenix/tm_phoenix.vmdl";
 
     /// <summary>
+    /// 是否为BOT启用随机模型
+    /// </summary>
+    public bool EnableBotRandomModel { get; set; } = false;
+
+    /// <summary>
+    /// BOT是否只使用免费模型（true=仅免费模型，false=所有模型）
+    /// </summary>
+    public bool BotOnlyFreeModels { get; set; } = true;
+
+    /// <summary>
     /// 权限设置
     /// </summary>
     public PermissionSettings Permissions { get; set; } = new();
