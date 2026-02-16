@@ -62,8 +62,8 @@ public partial class PlayersModel
             var playerManager = _serviceProvider?.GetService<IPlayerManagerService>();
             if (playerManager == null) return;
             var player = playerManager.GetPlayer(@event.PlayerId);
-            // 跳过BOT
-            if (player == null || !player.IsValid || player.SteamID == 0 || player.SteamID < 80000000000000000) return;
+            // 跳过无效玩家和BOT
+            if (player == null || !player.IsValid || player.IsFakeClient) return;
 
             Core.Scheduler.DelayBySeconds(1.0f, () =>
             {
@@ -133,8 +133,8 @@ public partial class PlayersModel
         Core.GameEvent.HookPost<EventPlayerSpawn>((@event) =>
         {
             var player = @event.UserIdPlayer;
-            // 跳过BOT
-            if (player == null || !player.IsValid || player.SteamID == 0 || player.SteamID < 70000000000000000) return HookResult.Continue;
+            // 跳过无效玩家和BOT
+            if (player == null || !player.IsValid || player.IsFakeClient) return HookResult.Continue;
 
             Core.Scheduler.DelayBySeconds(0.1f, () =>
             {
@@ -212,8 +212,8 @@ public partial class PlayersModel
             {
                 var allPlayers = Enumerable.Range(0, 64)
                     .Select(i => playerManager.GetPlayer(i))
-                    // 跳过BOT
-                    .Where(p => p != null && p.IsValid && p.SteamID > 0 && p.SteamID >= 70000000000000000 && p.Pawn?.IsValid == true)
+                    // 跳过无效玩家和BOT
+                    .Where(p => p != null && p.IsValid && !p.IsFakeClient && p.Pawn?.IsValid == true)
                     .ToList();
                 
                 if (allPlayers.Count == 0) return;

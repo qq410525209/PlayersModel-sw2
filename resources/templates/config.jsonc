@@ -29,8 +29,7 @@
     // 权限设置
     "Permissions": {
       // 管理员权限列表 (拥有其中任一权限即可使用管理员命令)
-      "AdminPermissions": ["root", "admin"]
-,
+      "AdminPermissions": ["root", "admin"],
       
       // VIP 权限列表 (拥有其中任一权限的玩家可使用VIP模型)
       "VipPermissions": ["vip", "*.vip"]
@@ -66,39 +65,39 @@
       "AutoCreateTables": true
     },
     
-    // 命令设置 (可自定义命令名称)
+    // 命令设置 (可自定义命令名称，支持多个命令别名)
     "Commands": {
       // 玩家命令
       "Player": {
-        // 打开模型选择菜单
-        "Model": "model",
+        // 打开模型选择菜单 (支持多个别名: model, shop, store)
+        "Model": ["model", "shop", "store"],
         
         // 购买模型
-        "BuyModel": "buymodel",
+        "BuyModel": ["buymodel"],
         
         // 查看余额
-        "Balance": "balance",
+        "Balance": ["balance"],
         
         // 我的模型
-        "MyModels": "mymodels"
+        "MyModels": ["mymodels"]
       },
       
       // 管理员命令
       "Admin": {
         // 给予玩家积分
-        "GiveCredits": "pm_givecredits",
+        "GiveCredits": ["pm_givecredits"],
         
         // 给予玩家模型
-        "GiveModel": "pm_givemodel",
+        "GiveModel": ["pm_givemodel"],
         
         // 为玩家设置模型
-        "SetModel": "pm_setmodel",
+        "SetModel": ["pm_setmodel"],
         
         // 重新加载配置
-        "ReloadConfig": "pm_reload",
+        "ReloadConfig": ["pm_reload"],
         
         // 查看玩家拥有的模型
-        "ListPlayerModels": "pm_listmodels"
+        "ListPlayerModels": ["pm_listmodels"]
       }
     }
   }

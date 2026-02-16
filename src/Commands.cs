@@ -22,18 +22,88 @@ public partial class PlayersModel
         var config = _serviceProvider.GetRequiredService<IOptionsMonitor<PluginConfig>>();
         var commands = config.CurrentValue.Commands;
 
-        // 注册玩家命令
-        Core.Command.RegisterCommand(commands.Player.Model, Command_Model);
-        Core.Command.RegisterCommand(commands.Player.BuyModel, Command_BuyModel);
-        Core.Command.RegisterCommand(commands.Player.Balance, Command_Balance);
-        Core.Command.RegisterCommand(commands.Player.MyModels, Command_MyModels);
+        // 注册玩家命令 (支持多个命令别名)
+        if (commands.Player.Model != null && commands.Player.Model.Length > 0)
+        {
+            foreach (var cmd in commands.Player.Model)
+            {
+                if (!string.IsNullOrWhiteSpace(cmd))
+                    Core.Command.RegisterCommand(cmd, Command_Model);
+            }
+        }
+        
+        if (commands.Player.BuyModel != null && commands.Player.BuyModel.Length > 0)
+        {
+            foreach (var cmd in commands.Player.BuyModel)
+            {
+                if (!string.IsNullOrWhiteSpace(cmd))
+                    Core.Command.RegisterCommand(cmd, Command_BuyModel);
+            }
+        }
+        
+        if (commands.Player.Balance != null && commands.Player.Balance.Length > 0)
+        {
+            foreach (var cmd in commands.Player.Balance)
+            {
+                if (!string.IsNullOrWhiteSpace(cmd))
+                    Core.Command.RegisterCommand(cmd, Command_Balance);
+            }
+        }
+        
+        if (commands.Player.MyModels != null && commands.Player.MyModels.Length > 0)
+        {
+            foreach (var cmd in commands.Player.MyModels)
+            {
+                if (!string.IsNullOrWhiteSpace(cmd))
+                    Core.Command.RegisterCommand(cmd, Command_MyModels);
+            }
+        }
 
-        // 注册管理员命令
-        Core.Command.RegisterCommand(commands.Admin.GiveCredits, Command_Admin_GiveCredits);
-        Core.Command.RegisterCommand(commands.Admin.GiveModel, Command_Admin_GiveModel);
-        Core.Command.RegisterCommand(commands.Admin.SetModel, Command_Admin_SetModel);
-        Core.Command.RegisterCommand(commands.Admin.ReloadConfig, Command_Admin_ReloadConfig);
-        Core.Command.RegisterCommand(commands.Admin.ListPlayerModels, Command_Admin_ListPlayerModels);
+        // 注册管理员命令 (支持多个命令别名)
+        if (commands.Admin.GiveCredits != null && commands.Admin.GiveCredits.Length > 0)
+        {
+            foreach (var cmd in commands.Admin.GiveCredits)
+            {
+                if (!string.IsNullOrWhiteSpace(cmd))
+                    Core.Command.RegisterCommand(cmd, Command_Admin_GiveCredits);
+            }
+        }
+        
+        if (commands.Admin.GiveModel != null && commands.Admin.GiveModel.Length > 0)
+        {
+            foreach (var cmd in commands.Admin.GiveModel)
+            {
+                if (!string.IsNullOrWhiteSpace(cmd))
+                    Core.Command.RegisterCommand(cmd, Command_Admin_GiveModel);
+            }
+        }
+            
+        if (commands.Admin.SetModel != null && commands.Admin.SetModel.Length > 0)
+        {
+            foreach (var cmd in commands.Admin.SetModel)
+            {
+                if (!string.IsNullOrWhiteSpace(cmd))
+                    Core.Command.RegisterCommand(cmd, Command_Admin_SetModel);
+            }
+        }
+        
+        if (commands.Admin.ReloadConfig != null && commands.Admin.ReloadConfig.Length > 0)
+        {
+            foreach (var cmd in commands.Admin.ReloadConfig)
+            {
+                if (!string.IsNullOrWhiteSpace(cmd))
+                    Core.Command.RegisterCommand(cmd, Command_Admin_ReloadConfig);
+            }
+        }
+        
+        if (commands.Admin.ListPlayerModels != null && commands.Admin.ListPlayerModels.Length > 0)
+        {
+            foreach (var cmd in commands.Admin.ListPlayerModels)
+            {
+                if (!string.IsNullOrWhiteSpace(cmd))
+                    Core.Command.RegisterCommand(cmd, Command_Admin_ListPlayerModels);
+            }
+        }
 
         Console.WriteLine($"{PluginPrefix} {_translationService?.GetConsole("system.commands_registered") ?? "Command system registered"}");
     }
