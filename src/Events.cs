@@ -83,7 +83,7 @@ public partial class PlayersModel
             // 跳过无效玩家和BOT
             if (player == null || !player.IsValid || player.IsFakeClient) return;
 
-            Core.Scheduler.DelayBySeconds(1.0f, () =>
+            Core.Scheduler.DelayBySeconds(1.5f, () =>
             {
                 if (!player.IsValid || player.Pawn?.IsValid != true || _modelCacheService == null) return;
                 
@@ -97,6 +97,12 @@ public partial class PlayersModel
                     var teamName = currentTeam == 2 ? "T" : currentTeam == 3 ? "CT" : "";
                     
                     if (string.IsNullOrEmpty(teamName)) return; // 不在T或CT队伍
+                    
+                    // 确保玩家的缓存已加载（防止热身回合时缓存未加载）
+                    if (_modelCacheService.GetPlayerCache(player.SteamID) == null)
+                    {
+                        _modelCacheService.BatchLoadPlayerCachesAsync(new[] { player.SteamID }).GetAwaiter().GetResult();
+                    }
                     
                     // 从缓存获取应用的模型路径（优先级：All > CT/T）
                     var modelPathToApply = _modelCacheService.GetModelPathToApply(player.SteamID, teamName);
@@ -199,7 +205,7 @@ public partial class PlayersModel
                 return HookResult.Continue;
             }
 
-            Core.Scheduler.DelayBySeconds(0.1f, () =>
+            Core.Scheduler.DelayBySeconds(0.3f, () =>
             {
                 if (!player.IsValid || player.Pawn?.IsValid != true || _modelCacheService == null) return;
                 
