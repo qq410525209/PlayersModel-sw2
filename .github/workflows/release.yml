@@ -43,6 +43,20 @@ jobs:
       - name: Publish project
         run: dotnet publish PlayersModel.csproj --configuration Release --no-build
       
+      - name: Copy runtimes to publish output
+        run: |
+          $source = "build/net10.0/runtimes"
+          $dest = "build/publish/PlayersModel/runtimes"
+          
+          if (Test-Path $source) {
+            Copy-Item $source -Destination $dest -Recurse -Force
+            Write-Host "Runtimes copied to publish output"
+            Get-ChildItem $dest -Recurse | Measure-Object | Select-Object Count
+          } else {
+            Write-Host "Warning: runtimes directory not found"
+          }
+        shell: pwsh
+      
       - name: Prepare release artifact
         run: |
           if (Test-Path "build/publish/PlayersModel") {
