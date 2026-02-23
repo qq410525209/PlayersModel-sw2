@@ -37,81 +37,6 @@ jobs:
       - name: Restore dependencies
         run: dotnet restore
       
-      - name: Get current version
-        id: get_version
-        run: |
-          $content = Get-Content PlayersModel.csproj -Raw
-          if ($content -match '<Version>([^<]+)</Version>') {
-            $VERSION = $matches[1]
-          } else {
-            $VERSION = "1.0.0"
-          }
-          Add-Content -Path $env:GITHUB_OUTPUT -Value "current_version=$VERSION"
-          Write-Host "Current version: $VERSION"
-        shell: pwsh
-      
-      - name: Calculate new version
-        id: new_version
-        run: |
-          $CURRENT = "${{ steps.get_version.outputs.current_version }}"
-          
-          # 获取最新的tag
-          try {
-            $LATEST_TAG = git describe --tags --abbrev=0 2>$null
-            $LATEST_TAG = $LATEST_TAG -replace '^v', ''
-          } catch {
-            $LATEST_TAG = "0.0.0"
-          }
-          
-          # 解析版本号
-          $CURRENT_PARTS = $CURRENT -split '\.'
-          $MAJOR = [int]($CURRENT_PARTS[0] -or 1)
-          $MINOR = [int]($CURRENT_PARTS[1] -or 0)
-          $PATCH = [int]($CURRENT_PARTS[2] -or 0)
-          
-          # 检查是否需要增加版本号
-          try {
-            $null = git describe --exact-match --tags HEAD 2>$null
-            Write-Host "Current commit already has a tag, skipping version bump"
-            $NEW_VERSION = $CURRENT
-          } catch {
-            # 增加补丁版本号
-            $PATCH += 1
-            $NEW_VERSION = "$MAJOR.$MINOR.$PATCH"
-          }
-          
-          $TAG_NAME = "v$NEW_VERSION"
-          Add-Content -Path $env:GITHUB_OUTPUT -Value "new_version=$NEW_VERSION"
-          Add-Content -Path $env:GITHUB_OUTPUT -Value "tag_name=$TAG_NAME"
-          Write-Host "New version: $NEW_VERSION"
-        shell: pwsh
-      
-      - name: Update version in csproj
-        run: |
-          $NEW_VERSION = "${{ steps.new_version.outputs.new_version }}"
-          $content = Get-Content PlayersModel.csproj -Raw
-          $content = $content -replace '<Version>[^<]+</Version>', "<Version>$NEW_VERSION</Version>"
-          Set-Content PlayersModel.csproj -Value $content
-          
-          Write-Host "Updated PlayersModel.csproj with version $NEW_VERSION"
-          Select-String -Path PlayersModel.csproj -Pattern "Version" | Select-Object -First 5
-        shell: pwsh
-      
-      - name: Commit version update
-        run: |
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-          
-          $diff = git diff PlayersModel.csproj
-          if ([string]::IsNullOrEmpty($diff)) {
-            Write-Host "No version changes to commit"
-          } else {
-            git add PlayersModel.csproj
-            git commit -m "chore: bump version to ${{ steps.new_version.outputs.new_version }}"
-            git push
-          }
-        shell: pwsh
-      
       - name: Build project
         run: dotnet build --configuration Release
       
@@ -143,63 +68,26 @@ jobs:
       - name: Generate release notes
         id: release_notes
         run: |
-          $VERSION = "${{ steps.new_version.outputs.tag_name }}"
+          $VERSION_TAG = "v1.0.6"
           $REPO_URL = "${{ github.server_url }}/${{ github.repository }}"
           
-          # 获取上一个tag
-          try {
-            $PREVIOUS_TAG = git describe --tags --abbrev=0 HEAD^ 2>$null
-            $TITLE = "PlayersModel $VERSION"
-            $COMMIT_RANGE = "$PREVIOUS_TAG..HEAD"
-          } catch {
-            $TITLE = "PlayersModel $VERSION (Initial Release)"
-            $COMMIT_RANGE = "HEAD"
-          }
-          
-          # 生成变更日志
-          $DESCRIPTION = "## 🚀 What's Changed`n`n"
-          
-          $logs = git log "$COMMIT_RANGE" --pretty=format:'%H%x09%s'
-          foreach ($line in $logs) {
-            if ([string]::IsNullOrWhiteSpace($line)) { continue }
-            $parts = $line -split "`t"
-            $COMMIT_SHA = $parts[0]
-            $COMMIT_SUBJECT = $parts[1]
-            $SHORT_SHA = $COMMIT_SHA.Substring(0, 7)
-            $COMMIT_URL = "$REPO_URL/commit/$COMMIT_SHA"
-            
-            $LINE = "- $COMMIT_SUBJECT ([$SHORT_SHA]($COMMIT_URL))`n"
-            $DESCRIPTION += $LINE
-          }
-          
-          if ($DESCRIPTION -match "What's Changed`n$") {
-            $DESCRIPTION += "- No significant changes in this release.`n"
-          }
-          
-          $DESCRIPTION += "`n## 📦 Installation`n`n"
+          # 简单的发布说明
+          $DESCRIPTION = "## 📦 PlayersModel Release`n`n"
+          $DESCRIPTION += "This is an automated release from GitHub Actions.`n`n"
+          $DESCRIPTION += "### Features`n"
+          $DESCRIPTION += "- Cookies integration for persistent model selection`n"
+          $DESCRIPTION += "- Simplified single-model-per-player design`n"
+          $DESCRIPTION += "- 3-tier model loading fallback system`n`n"
+          $DESCRIPTION += "### Installation`n"
           $DESCRIPTION += "1. Download ``PlayersModel.zip``"$"`n"
           $DESCRIPTION += "2. Extract to your SwiftlyS2 plugins directory`n"
           $DESCRIPTION += "3. Restart your server`n"
           
           # 保存到文件
-          $TITLE | Out-File -FilePath release_title.txt -Encoding UTF8
+          "PlayersModel $VERSION_TAG" | Out-File -FilePath release_title.txt -Encoding UTF8
           $DESCRIPTION | Out-File -FilePath release_description.txt -Encoding UTF8
           
           Write-Host "Release notes generated"
-        shell: pwsh
-      
-      - name: Create Git Tag
-        run: |
-          $TAG_NAME = "${{ steps.new_version.outputs.tag_name }}"
-          
-          try {
-            $null = git rev-parse $TAG_NAME 2>$null
-            Write-Host "Tag $TAG_NAME already exists"
-          } catch {
-            git tag $TAG_NAME
-            git push origin $TAG_NAME
-            Write-Host "Created and pushed tag $TAG_NAME"
-          }
         shell: pwsh
       
       - name: Create GitHub Release
@@ -208,7 +96,7 @@ jobs:
         run: |
           $TITLE = Get-Content release_title.txt -Raw
           $DESCRIPTION = Get-Content release_description.txt -Raw
-          $TAG_NAME = "${{ steps.new_version.outputs.tag_name }}"
+          $TAG_NAME = "v1.0.6"
           
           # 检查release是否已存在
           try {
@@ -232,6 +120,6 @@ jobs:
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: PlayersModel-${{ steps.new_version.outputs.new_version }}
+          name: PlayersModel-1.0.6
           path: release-artifacts/PlayersModel.zip
           retention-days: 30
