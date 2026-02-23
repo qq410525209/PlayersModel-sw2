@@ -148,22 +148,18 @@ public class DatabaseService : IDatabaseService
             await connection.ExecuteAsync(createOwnedModelsTable);
             _logger.LogInformation(_translation.GetConsole("database.table_initialized", OwnedModelsTable));
 
-            // 创建玩家当前装备的模型表（优化版）
+            // 创建玩家当前装备的模型表（简化版 - 一个玩家只有一个当前模型）
             var createCurrentModelsTable = $@"
                 CREATE TABLE IF NOT EXISTS {CurrentModelsTable} (
                     id BIGINT AUTO_INCREMENT PRIMARY KEY,
-                    steam_id BIGINT NOT NULL,
+                    steam_id BIGINT NOT NULL UNIQUE,
                     player_name VARCHAR(64),
                     model_id VARCHAR(128),
                     model_path VARCHAR(255),
                     arms_path VARCHAR(255),
-                    team VARCHAR(8),
-                    meshgroup VARCHAR(255) NULL,
                     usage_count INT DEFAULT 0,
                     equipped_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                    UNIQUE KEY unique_steam_team (steam_id, team),
-                    INDEX idx_model_id (model_id),
-                    INDEX idx_team (team)
+                    INDEX idx_model_id (model_id)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
             ";
 
@@ -359,7 +355,7 @@ public class DatabaseService : IDatabaseService
 
             using var connection = GetConnection();
             var sql = $@"
-                SELECT steam_id, team, model_path, arms_path FROM {CurrentModelsTable}
+                SELECT steam_id, model_path, arms_path FROM {CurrentModelsTable}
                 WHERE steam_id IN @SteamIds
             ";
 
@@ -370,14 +366,14 @@ public class DatabaseService : IDatabaseService
             foreach (var row in results)
             {
                 ulong steamId = (ulong)row.steam_id;
-                string team = (string)row.team;
                 string? modelPath = row.model_path;
                 string? armsPath = row.arms_path;
                 
                 if (!playerModels.ContainsKey(steamId))
                     playerModels[steamId] = new Dictionary<string, (string?, string?)>();
                 
-                playerModels[steamId][team] = (modelPath, armsPath);
+                // 由于现在只有一个模型，用 "" 作为键
+                playerModels[steamId][""] = (modelPath, armsPath);
             }
             
             return playerModels;
@@ -399,10 +395,10 @@ public class DatabaseService : IDatabaseService
             using var connection = GetConnection();
             var sql = $@"
                 SELECT model_path, arms_path FROM {CurrentModelsTable}
-                WHERE steam_id = @SteamId AND team = @Team
+                WHERE steam_id = @SteamId
             ";
 
-            var result = await connection.QueryFirstOrDefaultAsync<dynamic>(sql, new { SteamId = steamId, Team = team });
+            var result = await connection.QueryFirstOrDefaultAsync<dynamic>(sql, new { SteamId = steamId });
             
             if (result == null)
                 return (null, null);
@@ -427,14 +423,13 @@ public class DatabaseService : IDatabaseService
             
             var sql = $@"
                 INSERT INTO {CurrentModelsTable} 
-                (steam_id, player_name, model_id, model_path, arms_path, team, usage_count)
-                VALUES (@SteamId, @PlayerName, @ModelId, @ModelPath, @ArmsPath, @Team, 1)
+                (steam_id, player_name, model_id, model_path, arms_path, usage_count)
+                VALUES (@SteamId, @PlayerName, @ModelId, @ModelPath, @ArmsPath, 1)
                 ON DUPLICATE KEY UPDATE 
                     player_name = @PlayerName,
                     model_id = @ModelId,
                     model_path = @ModelPath, 
                     arms_path = @ArmsPath,
-                    team = @Team,
                     usage_count = usage_count + 1,
                     equipped_time = CURRENT_TIMESTAMP
             ";
@@ -445,8 +440,7 @@ public class DatabaseService : IDatabaseService
                 PlayerName = playerName,
                 ModelId = modelId,
                 ModelPath = modelPath,
-                ArmsPath = armsPath,
-                Team = team
+                ArmsPath = armsPath
             });
 
             // 更新统计表
@@ -475,7 +469,7 @@ public class DatabaseService : IDatabaseService
     }
 
     /// <summary>
-    /// 删除玩家指定阵营的当前模型
+    /// 删除玩家的当前模型
     /// </summary>
     public async Task DeletePlayerCurrentModelAsync(ulong steamId, string team)
     {
@@ -484,10 +478,10 @@ public class DatabaseService : IDatabaseService
             using var connection = GetConnection();
             var sql = $@"
                 DELETE FROM {CurrentModelsTable}
-                WHERE steam_id = @SteamId AND team = @Team
+                WHERE steam_id = @SteamId
             ";
 
-            await connection.ExecuteAsync(sql, new { SteamId = steamId, Team = team });
+            await connection.ExecuteAsync(sql, new { SteamId = steamId });
             
             _logger.LogDebug(_translation.GetConsole("database.delete_model_debug", steamId, team));
         }

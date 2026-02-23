@@ -67,6 +67,7 @@ public class ModelService : IModelService
     private IEconomyAPIv1? _economyAPI;
     private readonly IModelCacheService _modelCache;
     private IMeshGroupService? _meshGroupService;
+    private ICookiesService? _cookiesService;
 
     private IModelHookService? _modelHookService;
 
@@ -110,6 +111,14 @@ public class ModelService : IModelService
     public void SetMeshGroupService(IMeshGroupService meshGroupService)
     {
         _meshGroupService = meshGroupService;
+    }
+
+    /// <summary>
+    /// 设置 Cookies 服务 (由主插件调用)
+    /// </summary>
+    public void SetCookiesService(ICookiesService cookiesService)
+    {
+        _cookiesService = cookiesService;
     }
 
     /// <summary>
@@ -249,103 +258,47 @@ public class ModelService : IModelService
                 }
             }
             
-            // 先保存模型到对应槽位
-            // All类型保存到All槽位，CT保存到CT槽位，T保存到T槽位
-            var targetTeam = model.Team; // "All"、"CT" 或 "T"
+            // 保存模型到数据库（简化版 - 一个玩家只有一个模型，不分队伍）
             _database.SetPlayerCurrentModelAsync(
                 player.SteamID, 
                 player.Controller.PlayerName, 
-                modelId, model.ModelPath, model.ArmsPath, targetTeam).GetAwaiter().GetResult();
+                modelId, model.ModelPath, model.ArmsPath, "").GetAwaiter().GetResult();
             
             // 更新缓存
-            _modelCache.UpdatePlayerCache(player.SteamID, targetTeam, model.ModelPath, model.ArmsPath);
+            _modelCache.UpdatePlayerCache(player.SteamID, "", model.ModelPath, model.ArmsPath);
 
-            // 获取玩家当前阵营
-            var currentTeam = player.Controller.TeamNum;
-            var teamName = currentTeam == 2 ? "T" : currentTeam == 3 ? "CT" : "Unknown";
-            
-            // 检查阵营是否匹配
-            bool teamMatches = model.Team.Equals("All", StringComparison.OrdinalIgnoreCase) ||
-                              model.Team.Equals(teamName, StringComparison.OrdinalIgnoreCase);
-            
-            // 只有阵营匹配时，才根据配置决定是否立即应用
-            bool shouldApplyNow = teamMatches && _config.CurrentValue.ApplyModelImmediately;
-            
-            if (shouldApplyNow && player.Pawn?.IsValid == true)
+            // 保存模型到 Cookies 以实现跨服重启持久化
+            _cookiesService?.SavePlayerModel(player, modelId);
+
+            // 立即应用模型（如果配置允许且玩家在游戏中）
+            if (_config.CurrentValue.ApplyModelImmediately && player.Pawn?.IsValid == true)
             {
-                // 如果装备的是CT/T模型，检查是否已经装备了All模型
-                // 如果有All模型，不执行立即应用（因为All优先级更高，会立即应用All）
-                if (!model.Team.Equals("All", StringComparison.OrdinalIgnoreCase))
+                _core.Scheduler.NextWorldUpdate(() =>
                 {
-                    var allModelData = _database.GetPlayerCurrentModelAsync(player.SteamID, "All").GetAwaiter().GetResult();
-                    if (!string.IsNullOrEmpty(allModelData.modelPath))
-                    {
-                        // 已装备All模型，不执行立即应用，只保存到数据库
-                        _logger.LogInformation(_translation.GetConsole("modelservice.saved_for_later", player.Controller.PlayerName, model.DisplayName, model.Team));
-                        _logger.LogInformation(_translation.GetConsole("modelservice.applied", player.Controller.PlayerName, model.DisplayName));
-                        return true;
-                    }
-                }
-                
-                // 立即应用模型，按优先级
-                string modelPathToApply = "";
-                
-                // 优先级系统：All > CT/T
-                // 1. 先检查All槽位
-                var allModelData2 = _database.GetPlayerCurrentModelAsync(player.SteamID, "All").GetAwaiter().GetResult();
-                if (!string.IsNullOrEmpty(allModelData2.modelPath))
-                {
-                    // All槽位有模型，优先使用All
-                    modelPathToApply = allModelData2.modelPath;
-                }
-                else
-                {
-                    // 2. All槽位没有，使用当前阵营槽位的模型
-                    var teamModelData = _database.GetPlayerCurrentModelAsync(player.SteamID, teamName).GetAwaiter().GetResult();
-                    if (!string.IsNullOrEmpty(teamModelData.modelPath))
-                    {
-                        modelPathToApply = teamModelData.modelPath;
-                    }
-                }
-                
-                // 应用模型 - 使用 Hook 服务替代直接 SetModel
-                if (!string.IsNullOrEmpty(modelPathToApply))
-                {
-                    // 标记玩家的模型待应用（通过 Hook 服务处理）
-                    if (_modelHookService != null)
-                    {
-                        _modelHookService.MarkPlayerForModelApply(player.SteamID, modelPathToApply, 0.05f);
-                    }
-                    else
-                    {
-                        // 降级方案：如果 Hook 服务未初始化，直接应用
-                        var pawn = player.Pawn;
-                        var pathToApply = modelPathToApply;
-                        _core.Scheduler.DelayBySeconds(0.05f, () =>
-                        {
-                            if (pawn?.IsValid == true)
-                                pawn.SetModel(pathToApply);
-                        });
-                    }
+                    if (!player.IsValid || player.Pawn?.IsValid != true)
+                        return;
                     
-                    // 应用 MeshGroup 默认配置
-                    if (_meshGroupService != null && model.MeshGroups != null && model.MeshGroups.Count > 0)
+                    try
                     {
-                        _core.Scheduler.DelayBySeconds(0.1f, () =>
+                        player.Pawn.SetModel(model.ModelPath);
+                        
+                        // 应用 MeshGroup 默认配置
+                        if (_meshGroupService != null && model.MeshGroups != null && model.MeshGroups.Count > 0)
                         {
                             _meshGroupService.ApplyDefaultMeshGroups(player, model).GetAwaiter().GetResult();
-                        });
+                        }
+                        
+                        _logger.LogInformation(_translation.GetConsole("modelservice.applied_now", player.Controller.PlayerName, model.DisplayName));
                     }
-                    
-                    _logger.LogInformation(_translation.GetConsole("modelservice.applied_now", player.Controller.PlayerName, model.DisplayName));
-                }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, $"Failed to apply model immediately: {model.ModelPath}");
+                    }
+                });
             }
             else
             {
-                // 显示正确的目标阵营
-                var targetTeams = model.Team.Equals("All", StringComparison.OrdinalIgnoreCase) 
-                    ? "CT和T" : model.Team;
-                _logger.LogInformation(_translation.GetConsole("modelservice.saved_for_later", player.Controller.PlayerName, model.DisplayName, targetTeams));
+                _logger.LogInformation(_translation.GetConsole("modelservice.saved_for_next_spawn", player.Controller.PlayerName, model.DisplayName));
             }
 
             _logger.LogInformation(_translation.GetConsole("modelservice.applied", player.Controller.PlayerName, model.DisplayName));

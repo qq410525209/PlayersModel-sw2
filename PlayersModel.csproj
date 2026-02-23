@@ -29,6 +29,11 @@
       <HintPath>Economy.Contract.dll</HintPath>
       <Private>false</Private>
     </Reference>
+    <!-- Cookies.Contract API Reference -->
+    <Reference Include="Cookies.Contract">
+      <HintPath>Cookies.Contract.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
   </ItemGroup>
 
   <ItemGroup>
@@ -38,6 +43,10 @@
     <Content Include="Economy.Contract.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>resources\exports\Economy.Contract.dll</Link>
+    </Content>
+    <Content Include="Cookies.Contract.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>resources\exports\Cookies.Contract.dll</Link>
     </Content>
   </ItemGroup>
 

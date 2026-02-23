@@ -90,57 +90,57 @@ public partial class PlayersModel
                 Task.Run(async () => await creditsService.HandlePlayerJoinAsync(player));
             }
 
-            Core.Scheduler.DelayBySeconds(1.5f, () =>
+            // 玩家模型应用 - 在下一个 Tick 应用（玩家 Pawn 已完全初始化）
+            Core.Scheduler.NextWorldUpdate(() =>
             {
                 if (!player.IsValid || player.Pawn?.IsValid != true || _modelCacheService == null) return;
                 
                 var logger = _serviceProvider?.GetService<ILogger<PlayersModel>>();
-                logger?.LogWarning($"[DEBUG] OnClientPutInServer - Player: {player.Controller.PlayerName}, SteamID: {player.SteamID}");
+                var cookiesService = _serviceProvider?.GetService<ICookiesService>();
+                var modelService = _serviceProvider?.GetService<IModelService>();
                 
                 try
                 {
-                    // 批量加载该玩家的缓存
-                    logger?.LogWarning($"[DEBUG] OnClientPutInServer - Before BatchLoad");
-                    _modelCacheService.BatchLoadPlayerCachesAsync(new[] { player.SteamID }).GetAwaiter().GetResult();
+                    string? modelPathToApply = null;
                     
-                    var cacheAfterLoad = _modelCacheService.GetPlayerCache(player.SteamID);
-                    logger?.LogWarning($"[DEBUG] OnClientPutInServer - Cache after load: {(cacheAfterLoad != null ? "EXISTS" : "NULL")}");
-                    
-                    if (cacheAfterLoad != null)
+                    // 第一步：尝试从 Cookies 加载玩家保存的模型 ID
+                    if (cookiesService != null)
                     {
-                        logger?.LogWarning($"[DEBUG] OnClientPutInServer - Cache content: AllTeam={cacheAfterLoad.AllTeamModelPath ?? "NULL"}, CT={cacheAfterLoad.CTModelPath ?? "NULL"}, T={cacheAfterLoad.TModelPath ?? "NULL"}");
+                        var savedModelId = cookiesService.LoadPlayerModel(player);
+                        if (!string.IsNullOrEmpty(savedModelId) && modelService != null)
+                        {
+                            var savedModel = modelService.GetModelById(savedModelId);
+                            if (savedModel != null && !string.IsNullOrEmpty(savedModel.ModelPath))
+                            {
+                                modelPathToApply = savedModel.ModelPath;
+                                logger?.LogInformation($"Loaded model '{savedModelId}' from Cookies for player {player.Controller.PlayerName}");
+                            }
+                        }
                     }
                     
-                    // 获取玩家当前阵营
-                    var currentTeam = player.Controller.TeamNum;
-                    var teamName = currentTeam == 2 ? "T" : currentTeam == 3 ? "CT" : "";
-                    
-                    logger?.LogWarning($"[DEBUG] EventPlayerSpawn - Team: {teamName}, TeamNum: {currentTeam}");
-                    if (string.IsNullOrEmpty(teamName)) return; // 不在T或CT队伍
-                    
-                    // 确保玩家的缓存已加载（防止热身回合时缓存未加载）
-                    var cacheBeforeLoad = _modelCacheService.GetPlayerCache(player.SteamID);
-                    logger?.LogWarning($"[DEBUG] EventPlayerSpawn - Cache before load: {(cacheBeforeLoad != null ? "EXISTS" : "NULL")}");
-                    
-                    if (cacheBeforeLoad != null)
+                    // 第二步：如果 Cookies 中没有模型，从数据库缓存加载
+                    if (string.IsNullOrEmpty(modelPathToApply))
                     {
-                        logger?.LogWarning($"[DEBUG] EventPlayerSpawn - Cache content: AllTeam={cacheBeforeLoad.AllTeamModelPath ?? "NULL"}, CT={cacheBeforeLoad.CTModelPath ?? "NULL"}, T={cacheBeforeLoad.TModelPath ?? "NULL"}");
-                    }
-                    
-                    if (_modelCacheService.GetPlayerCache(player.SteamID) == null)
-                    {
-                        logger?.LogWarning($"[DEBUG] EventPlayerSpawn - Loading cache because it was NULL");
                         _modelCacheService.BatchLoadPlayerCachesAsync(new[] { player.SteamID }).GetAwaiter().GetResult();
+                        
+                        // 获取玩家当前阵营
+                        var currentTeam = player.Controller.TeamNum;
+                        var teamName = currentTeam == 2 ? "T" : currentTeam == 3 ? "CT" : "";
+                        
+                        if (!string.IsNullOrEmpty(teamName))
+                        {
+                            modelPathToApply = _modelCacheService.GetModelPathToApply(player.SteamID, teamName);
+                        }
                     }
                     
-                    // 从缓存获取应用的模型路径（优先级：All > CT/T）
-                    var modelPathToApply = _modelCacheService.GetModelPathToApply(player.SteamID, teamName);
-                    
-                    // 如果缓存中没有，使用阵营默认模型
+                    // 第三步：如果都没有，使用阵营默认模型
                     if (string.IsNullOrEmpty(modelPathToApply))
                     {
                         var config = _serviceProvider?.GetService<IOptionsMonitor<PluginConfig>>();
-                        if (config != null)
+                        var currentTeam = player.Controller.TeamNum;
+                        var teamName = currentTeam == 2 ? "T" : currentTeam == 3 ? "CT" : "";
+                        
+                        if (config != null && !string.IsNullOrEmpty(teamName))
                         {
                             modelPathToApply = teamName == "CT" 
                                 ? config.CurrentValue.DefaultCTModelPath 
@@ -148,9 +148,8 @@ public partial class PlayersModel
                         }
                     }
                     
-                    logger?.LogWarning($"[DEBUG] OnClientPutInServer - ModelPath: {modelPathToApply ?? "NULL"}");
                     // 应用模型
-                    if (!string.IsNullOrEmpty(modelPathToApply))
+                    if (!string.IsNullOrEmpty(modelPathToApply) && player.Pawn?.IsValid == true)
                     {
                         player.Pawn.SetModel(modelPathToApply);
                         logger?.LogInformation(_translationService?.GetConsole("events.player_join_applied", player.Controller.PlayerName) ?? $"Applied model on join: {player.Controller.PlayerName}");
@@ -162,6 +161,65 @@ public partial class PlayersModel
                 }
             });
         };
+
+        // 玩家切换队伍事件 - 重新应用对应队伍的模型
+        Core.GameEvent.HookPost<EventPlayerTeam>((@event) =>
+        {
+            var player = @event.UserIdPlayer;
+            if (player == null || !player.IsValid || player.IsFakeClient) return HookResult.Continue;
+
+            // 延迟一个Tick，确保玩家已经完成队伍切换并生成新的Pawn
+            Core.Scheduler.NextWorldUpdate(() =>
+            {
+                if (!player.IsValid || player.Pawn?.IsValid != true || _modelCacheService == null) return;
+                
+                var logger = _serviceProvider?.GetService<ILogger<PlayersModel>>();
+                var config = _serviceProvider?.GetService<IOptionsMonitor<PluginConfig>>();
+                
+                try
+                {
+                    // 获取玩家切换后的新阵营
+                    var currentTeam = player.Controller.TeamNum;
+                    var teamName = currentTeam == 2 ? "T" : currentTeam == 3 ? "CT" : "";
+                    
+                    if (string.IsNullOrEmpty(teamName))
+                    {
+                        // 不在T或CT队伍（可能在观察者或未分配）
+                        return;
+                    }
+                    
+                    // 从缓存获取该阵营的模型路径（优先级：All > CT/T）
+                    var modelPathToApply = _modelCacheService.GetModelPathToApply(player.SteamID, teamName);
+                    
+                    // 如果缓存中没有，使用阵营默认模型
+                    if (string.IsNullOrEmpty(modelPathToApply))
+                    {
+                        if (config != null)
+                        {
+                            modelPathToApply = teamName == "CT" 
+                                ? config.CurrentValue.DefaultCTModelPath 
+                                : config.CurrentValue.DefaultTModelPath;
+                        }
+                    }
+                    
+                    // 应用模型
+                    if (!string.IsNullOrEmpty(modelPathToApply) && player.Pawn?.IsValid == true)
+                    {
+                        player.Pawn.SetModel(modelPathToApply);
+                        logger?.LogInformation(
+                            _translationService?.GetConsole("events.player_team_applied", player.Controller.PlayerName, teamName) 
+                            ?? $"Applied model on team change for {player.Controller.PlayerName} (Team: {teamName})"
+                        );
+                    }
+                }
+                catch (Exception ex)
+                {
+                    logger?.LogError(ex, _translationService?.GetConsole("events.player_team_failed", player?.Controller.PlayerName ?? "") ?? $"Failed to apply model on team change: {player?.Controller.PlayerName}");
+                }
+            });
+            
+            return HookResult.Continue;
+        });
 
         // 玩家重生事件
         Core.GameEvent.HookPost<EventPlayerSpawn>((@event) =>
@@ -175,7 +233,7 @@ public partial class PlayersModel
                 var config = _serviceProvider?.GetService<IOptionsMonitor<PluginConfig>>();
                 if (config?.CurrentValue.EnableBotRandomModel == true)
                 {
-                    Core.Scheduler.DelayBySeconds(0.2f, () =>
+                    Core.Scheduler.NextWorldUpdate(() =>
                     {
                         if (!player.IsValid || player.Pawn?.IsValid != true || _modelService == null) return;
                         
@@ -215,10 +273,10 @@ public partial class PlayersModel
                 return HookResult.Continue;
             }
 
-            Core.Scheduler.DelayBySeconds(0.3f, () =>
+            // 玩家模型应用
+            Core.Scheduler.NextWorldUpdate(() =>
             {
                 var logger = _serviceProvider?.GetService<ILogger<PlayersModel>>();
-                logger?.LogWarning($"[DEBUG] EventPlayerSpawn - Player: {player.Controller.PlayerName}, SteamID: {player.SteamID}");
                 if (!player.IsValid || player.Pawn?.IsValid != true || _modelCacheService == null) return;
                 
                 try
@@ -227,7 +285,6 @@ public partial class PlayersModel
                     var currentTeam = player.Controller.TeamNum;
                     var teamName = currentTeam == 2 ? "T" : currentTeam == 3 ? "CT" : "";
                     
-                    logger?.LogWarning($"[DEBUG] OnClientPutInServer - Team: {teamName}, TeamNum: {currentTeam}");
                     if (string.IsNullOrEmpty(teamName)) return; // 不在T或CT队伍
                     
                     // 从缓存获取应用的模型路径（优先级：All > CT/T）
@@ -245,16 +302,10 @@ public partial class PlayersModel
                         }
                     }
                     
-                    logger?.LogWarning($"[DEBUG] EventPlayerSpawn - ModelPath: {modelPathToApply ?? "NULL"}");
                     // 应用模型
                     if (!string.IsNullOrEmpty(modelPathToApply))
                     {
                         player.Pawn.SetModel(modelPathToApply);
-                        
-                        // 刷新玩家实体以立即应用模型（避免需要二次重生）
-                        // 注意：这可能会导致轻微的视觉闪烁，但确保模型立即生效
-                        player.Pawn.Teleport(player.Pawn.AbsOrigin, player.Pawn.AbsRotation, player.Pawn.AbsVelocity);
-                        
                         logger?.LogInformation(_translationService?.GetConsole("events.player_spawn_applied", player.Controller.PlayerName) ?? $"Applied model on spawn: {player.Controller.PlayerName}");
                     }
                 }
@@ -276,7 +327,7 @@ public partial class PlayersModel
             var logger = _serviceProvider?.GetService<ILogger<PlayersModel>>();
             logger?.LogInformation(_translationService?.GetConsole("events.round_start") ?? "Round started, applying saved models to all players");
 
-            Core.Scheduler.DelayBySeconds(0.5f, () =>
+            Core.Scheduler.NextWorldUpdate(() =>
             {
                 var allPlayers = Enumerable.Range(0, 64)
                     .Select(i => playerManager.GetPlayer(i))

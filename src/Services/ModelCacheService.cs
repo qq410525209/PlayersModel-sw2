@@ -4,16 +4,12 @@ using System.Collections.Concurrent;
 namespace PlayersModel.Services;
 
 /// <summary>
-/// 玩家模型缓存数据
+/// 玩家模型缓存数据（简化版 - 一个玩家只有一个模型）
 /// </summary>
 public class PlayerModelCache
 {
-    public string? AllTeamModelPath { get; set; }
-    public string? AllTeamArmsPath { get; set; }
-    public string? CTModelPath { get; set; }
-    public string? CTArmsPath { get; set; }
-    public string? TModelPath { get; set; }
-    public string? TArmsPath { get; set; }
+    public string? ModelPath { get; set; }
+    public string? ArmsPath { get; set; }
     public DateTime LastUpdated { get; set; }
 }
 
@@ -48,7 +44,7 @@ public interface IModelCacheService
     void ClearAllCaches();
     
     /// <summary>
-    /// 获取玩家应该应用的模型路径（根据优先级）
+    /// 获取玩家应该应用的模型路径（简化版 - 直接返回存储的模型）
     /// </summary>
     string? GetModelPathToApply(ulong steamId, string teamName);
 }
@@ -78,7 +74,8 @@ public class ModelCacheService : IModelCacheService
     /// </summary>
     public PlayerModelCache? GetPlayerCache(ulong steamId)
     {
-        return _cache.TryGetValue(steamId, out var cache) ? cache : null;
+        _cache.TryGetValue(steamId, out var cache);
+        return cache;
     }
 
     /// <summary>
@@ -86,26 +83,15 @@ public class ModelCacheService : IModelCacheService
     /// </summary>
     public void UpdatePlayerCache(ulong steamId, string team, string? modelPath, string? armsPath)
     {
-        var cache = _cache.GetOrAdd(steamId, _ => new PlayerModelCache());
-        
-        switch (team.ToUpper())
+        var cache = new PlayerModelCache
         {
-            case "ALL":
-                cache.AllTeamModelPath = modelPath;
-                cache.AllTeamArmsPath = armsPath;
-                break;
-            case "CT":
-                cache.CTModelPath = modelPath;
-                cache.CTArmsPath = armsPath;
-                break;
-            case "T":
-                cache.TModelPath = modelPath;
-                cache.TArmsPath = armsPath;
-                break;
-        }
-        
-        cache.LastUpdated = DateTime.UtcNow;
-        _logger.LogDebug($"Updated cache for player {steamId}, team {team}");
+            ModelPath = modelPath,
+            ArmsPath = armsPath,
+            LastUpdated = DateTime.UtcNow
+        };
+
+        _cache.AddOrUpdate(steamId, cache, (_, _) => cache);
+        _logger.LogDebug($"Updated cache for player {steamId}");
     }
 
     /// <summary>
@@ -116,81 +102,54 @@ public class ModelCacheService : IModelCacheService
         try
         {
             var steamIdList = steamIds.ToList();
-            if (steamIdList.Count == 0) return;
+            if (steamIdList.Count == 0)
+                return;
 
-            _logger.LogInformation(_translation.GetConsole("cache.batch_loading", steamIdList.Count));
+            _logger.LogInformation(
+                _translation.GetConsole("cache.batch_loading", steamIdList.Count.ToString()) 
+                ?? $"Batch loading model cache for {steamIdList.Count} players..."
+            );
 
-            // 批量获取所有玩家的模型数据
-            var batchData = await _database.GetBatchPlayerCurrentModelsAsync(steamIdList);
+            // 从数据库批量加载当前模型
+            var playerModels = await _database.GetBatchPlayerCurrentModelsAsync(steamIdList);
 
             foreach (var steamId in steamIdList)
             {
-                if (batchData.TryGetValue(steamId, out var teamModels))
+                if (playerModels.TryGetValue(steamId, out var models))
                 {
-                    var cache = _cache.GetOrAdd(steamId, _ => new PlayerModelCache());
-                    
-                    // 更新All槽位
-                    if (teamModels.TryGetValue("All", out var allModel))
+                    // 由于现在只有一个模型，直接取第一个（键为 ""）
+                    if (models.TryGetValue("", out var modelData))
                     {
-                        cache.AllTeamModelPath = allModel.modelPath;
-                        cache.AllTeamArmsPath = allModel.armsPath;
+                        var cache = new PlayerModelCache
+                        {
+                            ModelPath = modelData.modelPath,
+                            ArmsPath = modelData.armsPath,
+                            LastUpdated = DateTime.UtcNow
+                        };
+                        _cache.AddOrUpdate(steamId, cache, (_, _) => cache);
                     }
-                    
-                    // 更新CT槽位
-                    if (teamModels.TryGetValue("CT", out var ctModel))
+                    else
                     {
-                        cache.CTModelPath = ctModel.modelPath;
-                        cache.CTArmsPath = ctModel.armsPath;
+                        // 玩家没有装备模型
+                        _cache.TryRemove(steamId, out _);
                     }
-                    
-                    // 更新T槽位
-                    if (teamModels.TryGetValue("T", out var tModel))
-                    {
-                        cache.TModelPath = tModel.modelPath;
-                        cache.TArmsPath = tModel.armsPath;
-                    }
-                    
-                    cache.LastUpdated = DateTime.UtcNow;
                 }
                 else
                 {
-                    // 即使没有数据也创建空缓存，避免重复查询
-                    _cache.GetOrAdd(steamId, _ => new PlayerModelCache
-                    {
-                        LastUpdated = DateTime.UtcNow
-                    });
+                    // 玩家在数据库中没有记录
+                    _cache.TryRemove(steamId, out _);
                 }
             }
 
-            _logger.LogInformation(_translation.GetConsole("cache.batch_loaded", steamIdList.Count));
+            _logger.LogInformation(
+                _translation.GetConsole("cache.batch_loaded", steamIdList.Count.ToString())
+                ?? $"Successfully batch loaded model cache for {steamIdList.Count} players"
+            );
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, _translation.GetConsole("cache.batch_load_failed"));
+            _logger.LogError(ex, _translation.GetConsole("cache.batch_load_failed") ?? "Failed to batch load player model cache");
         }
-    }
-
-    /// <summary>
-    /// 获取玩家应该应用的模型路径（根据优先级：All > CT/T）
-    /// </summary>
-    public string? GetModelPathToApply(ulong steamId, string teamName)
-    {
-        var cache = GetPlayerCache(steamId);
-        if (cache == null) return null;
-
-        // 优先级系统：All > CT/T
-        if (!string.IsNullOrEmpty(cache.AllTeamModelPath))
-        {
-            return cache.AllTeamModelPath;
-        }
-
-        // 根据阵营返回对应模型
-        return teamName.ToUpper() switch
-        {
-            "CT" => cache.CTModelPath,
-            "T" => cache.TModelPath,
-            _ => null
-        };
     }
 
     /// <summary>
@@ -208,6 +167,19 @@ public class ModelCacheService : IModelCacheService
     public void ClearAllCaches()
     {
         _cache.Clear();
-        _logger.LogInformation(_translation.GetConsole("cache.all_cleared"));
+        _logger.LogInformation(_translation.GetConsole("cache.all_cleared") ?? "Cleared all model caches");
+    }
+
+    /// <summary>
+    /// 获取玩家应该应用的模型路径（简化版 - 直接返回缓存中的模型）
+    /// </summary>
+    public string? GetModelPathToApply(ulong steamId, string teamName)
+    {
+        if (_cache.TryGetValue(steamId, out var cache))
+        {
+            return cache.ModelPath;
+        }
+
+        return null;
     }
 }

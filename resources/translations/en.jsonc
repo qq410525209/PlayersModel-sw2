@@ -23,6 +23,8 @@
   "system.commands_registered": "✓ Command system registered",
   "system.modelservice_warning": "⚠ Warning: ModelService is null",
   "system.service_not_loaded": "Error: Service not loaded",
+  "system.applying_models_to_players": "Applying saved models to {0} online players...",
+  "system.model_applied_on_startup": "Applied model on startup: {0}",
   
   // ========== Database Messages ==========
   "database.auto_create_disabled": "Database table auto-creation disabled",
@@ -61,6 +63,7 @@
   "modelservice.purchase_failed": "Failed to purchase model: {0}",
   "modelservice.applied_now": "Player {0} applied model {1} immediately",
   "modelservice.saved_for_later": "Player {0} saved model {1} (Team: {2}), will apply on respawn",
+  "modelservice.saved_for_next_spawn": "Player {0} saved model {1}, will apply on respawn",
   "modelservice.saved_all_teams": "Player {0} saved universal model {1} to both CT and T teams",
   
   // ========== Event Messages ==========
@@ -71,6 +74,8 @@
   "events.player_join_failed": "Failed to apply model on join: {0}",
   "events.player_spawn_applied": "Applied model on spawn: {0}",
   "events.player_spawn_failed": "Failed to apply model on spawn: {0}",
+  "events.player_team_applied": "Applied model on team change: {0} (Team: {1})",
+  "events.player_team_failed": "Failed to apply model on team change: {0}",
   "events.round_start": "Round started, applying saved models to all players",
   "events.round_start_applied": "Applied model on round start: {0}",
   "events.round_start_failed": "Failed to apply model on round start: {0}",

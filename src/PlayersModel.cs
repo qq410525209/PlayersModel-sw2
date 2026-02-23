@@ -2,9 +2,11 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Configuration.Json;
+using Microsoft.Extensions.Logging;
 using SwiftlyS2.Shared;
 using SwiftlyS2.Shared.Plugins;
 using Economy.Contract;
+using Cookies.Contract;
 using PlayersModel.Config;
 using PlayersModel.Services;
 
@@ -20,6 +22,7 @@ namespace PlayersModel
     public partial class PlayersModel : BasePlugin
     {
         private IEconomyAPIv1? _economyAPI;
+        private IPlayerCookiesAPIv1? _cookiesAPI;
         private IInterfaceManager? _interfaceManager;
     private IServiceProvider? _serviceProvider;
     private IDatabaseService? _databaseService;
@@ -28,6 +31,7 @@ namespace PlayersModel
     private IMeshGroupService? _meshGroupService;
     private ITranslationService? _translationService;
     private ICreditsService? _creditsService;
+    private ICookiesService? _cookiesService;
 
         /// <summary>
         /// 获取格式化的插件前缀 [PluginName]
@@ -54,15 +58,42 @@ namespace PlayersModel
         {
             _interfaceManager = interfaceManager;
             
-            // 注意：此时翻译服务还未初始化，使用硬编码消息
-            if (interfaceManager.HasSharedInterface("Economy.API.v1"))
+            try
             {
-                _economyAPI = interfaceManager.GetSharedInterface<IEconomyAPIv1>("Economy.API.v1");
-                Console.WriteLine($"{PluginPrefix} ✓ Successfully connected to Economy system!");
+                if (interfaceManager.HasSharedInterface("Economy.API.v1"))
+                {
+                    _economyAPI = interfaceManager.GetSharedInterface<IEconomyAPIv1>("Economy.API.v1");
+                    Console.WriteLine($"{PluginPrefix} ✓ Economy API loaded successfully");
+                }
+                else
+                {
+                    Console.WriteLine($"{PluginPrefix} ⚠ Economy API not found");
+                }
             }
-            else
+            catch (Exception ex)
             {
-                Console.WriteLine($"{PluginPrefix} ⚠ Warning: Economy plugin not found, purchase features will be unavailable!");
+                Console.WriteLine($"{PluginPrefix} ⚠ Warning: Failed to load Economy API: {ex.Message}");
+                _economyAPI = null;
+            }
+
+            try
+            {
+                Console.WriteLine($"{PluginPrefix} [DEBUG] Checking for Cookies API...");
+                if (interfaceManager.HasSharedInterface("Cookies.Player.v1"))
+                {
+                    _cookiesAPI = interfaceManager.GetSharedInterface<IPlayerCookiesAPIv1>("Cookies.Player.v1");
+                    Console.WriteLine($"{PluginPrefix} ✓ Cookies API loaded successfully");
+                }
+                else
+                {
+                    Console.WriteLine($"{PluginPrefix} ⚠ Cookies API not found (interface 'Cookies.Player.v1' not available)");
+                    Console.WriteLine($"{PluginPrefix} [DEBUG] This is OK - Cookies plugin may not be installed");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"{PluginPrefix} ⚠ Warning: Failed to load Cookies API: {ex.Message}");
+                _cookiesAPI = null;
             }
         }
 
@@ -83,6 +114,9 @@ namespace PlayersModel
 
                 // 初始化经济系统
                 InitializeEconomy();
+                
+                // 初始化 Cookies 系统
+                InitializeCookies();
 
                 // 初始化数据库
                 InitializeDatabaseAsync().Wait();
@@ -98,6 +132,9 @@ namespace PlayersModel
 
                 // 启动定时收入系统
                 _creditsService?.StartTimedIncomeSystem();
+
+                // 为热重载时已经在线的玩家应用模型，或在插件启动时为所有玩家应用
+                ApplyModelsToAllOnlinePlayers();
 
                 Console.WriteLine($"{PluginPrefix} {_translationService?.GetConsole("plugin.loaded") ?? "Plugin loaded successfully!"}");
                 
@@ -174,6 +211,7 @@ namespace PlayersModel
             services.AddSingleton<IMenuService, MenuService>();
             services.AddSingleton<IModelHookService, ModelHookService>();
             services.AddSingleton<ICreditsService, CreditsService>();
+            services.AddSingleton<ICookiesService, CookiesService>();
 
             _serviceProvider = services.BuildServiceProvider();
 
@@ -184,6 +222,15 @@ namespace PlayersModel
             _meshGroupService = _serviceProvider.GetRequiredService<IMeshGroupService>();
             
             _creditsService = _serviceProvider.GetRequiredService<ICreditsService>();
+            // 获取 CookiesService 实例
+            _cookiesService = _serviceProvider.GetRequiredService<ICookiesService>();
+            
+            // 将 CookiesService 注入到 ModelService
+            if (_modelService is ModelService modelService)
+            {
+                modelService.SetCookiesService(_cookiesService);
+            }
+            
             // 初始化模型Hook服务并注入到ModelService
             var modelHookService = _serviceProvider.GetRequiredService<IModelHookService>();
             _modelService.SetModelHookService(modelHookService);
@@ -195,41 +242,78 @@ namespace PlayersModel
         }
 
         /// <summary>
+        /// 初始化 Cookies 系统
+        /// </summary>
+        public void InitializeCookies()
+        {
+            if (_cookiesAPI != null && _cookiesService != null)
+            {
+                try
+                {
+                    _cookiesService.SetCookiesAPI(_cookiesAPI);
+                    Console.WriteLine($"{PluginPrefix} {_translationService?.GetConsole("system.cookies_api_passed") ?? "Cookies API successfully passed to CookiesService"}");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"{PluginPrefix} ⚠ Warning: Failed to initialize Cookies integration: {ex.Message}");
+                }
+            }
+            else
+            {
+                if (_cookiesAPI == null)
+                {
+                    Console.WriteLine($"{PluginPrefix} {_translationService?.GetConsole("system.cookies_warning") ?? "Warning: Cookies API is null, player model persistence may not work"}");
+                }
+                if (_cookiesService == null)
+                {
+                    Console.WriteLine($"{PluginPrefix} {_translationService?.GetConsole("system.cookiesservice_warning") ?? "Warning: CookiesService is null"}");
+                }
+            }
+        }
+
+        /// <summary>
         /// 初始化经济系统
         /// </summary>
         public void InitializeEconomy()
         {
             if (_economyAPI != null && _modelService != null)
             {
-                // 将经济 API 传递给模型服务
-                if (_modelService is ModelService modelService)
+                try
                 {
-                    modelService.SetEconomyAPI(_economyAPI);
-                    Console.WriteLine($"{PluginPrefix} {_translationService?.GetConsole("system.economy_api_passed") ?? "Economy API successfully passed to ModelService"}");
-                     
-   
-                // 将 MeshGroupService 传递给 ModelService
-                    if (_meshGroupService != null)
+                    // 将经济 API 传递给模型服务
+                    if (_modelService is ModelService modelService)
                     {
-                        modelService.SetMeshGroupService(_meshGroupService);
-                        Console.WriteLine($"{PluginPrefix} MeshGroupService successfully passed to ModelService");
+                        modelService.SetEconomyAPI(_economyAPI);
+                        Console.WriteLine($"{PluginPrefix} {_translationService?.GetConsole("system.economy_api_passed") ?? "Economy API successfully passed to ModelService"}");
+                         
+                        // 将 MeshGroupService 传递给 ModelService
+                        if (_meshGroupService != null)
+                        {
+                            modelService.SetMeshGroupService(_meshGroupService);
+                            Console.WriteLine($"{PluginPrefix} MeshGroupService successfully passed to ModelService");
+                        }
                     }
-                // 将 Economy API 传递给 CreditsService
-                if (_creditsService is CreditsService creditsService)
-                {
-                    creditsService.SetEconomyAPI(_economyAPI);
-                    Console.WriteLine($"{PluginPrefix} Economy API successfully passed to CreditsService");
-                }
+                    
+                    // 将 Economy API 传递给 CreditsService
+                    if (_creditsService is CreditsService creditsService)
+                    {
+                        creditsService.SetEconomyAPI(_economyAPI);
+                        Console.WriteLine($"{PluginPrefix} Economy API successfully passed to CreditsService");
+                    }
 
+                    // 确保钱包类型存在
+                    var config = _serviceProvider?.GetRequiredService<IOptionsMonitor<PluginConfig>>();
+                    if (config != null && _economyAPI != null)
+                    {
+                        var walletKind = config.CurrentValue.WalletKind;
+                        _economyAPI.EnsureWalletKind(walletKind);
+                        Console.WriteLine($"{PluginPrefix} {_translationService?.GetConsole("system.economy_wallet_initialized", walletKind) ?? $"Wallet type initialized: {walletKind}"}");
+                    }
                 }
-
-                // 确保钱包类型存在
-                var config = _serviceProvider?.GetRequiredService<IOptionsMonitor<PluginConfig>>();
-                if (config != null)
+                catch (Exception ex)
                 {
-                    var walletKind = config.CurrentValue.WalletKind;
-                    _economyAPI.EnsureWalletKind(walletKind);
-                    Console.WriteLine($"{PluginPrefix} {_translationService?.GetConsole("system.economy_wallet_initialized", walletKind) ?? $"Wallet type initialized: {walletKind}"}");
+                    Console.WriteLine($"{PluginPrefix} ⚠ Warning: Failed to fully initialize Economy integration: {ex.Message}");
+                    _economyAPI = null;
                 }
             }
             else
@@ -277,6 +361,87 @@ namespace PlayersModel
         {
             // 事件处理将在单独的文件中实现
             Console.WriteLine($"{PluginPrefix} {_translationService?.GetConsole("system.events_registered") ?? "Event listeners registered"}");
+        }
+
+        /// <summary>
+        /// 为所有在线玩家应用保存的模型（热重载或启动时）
+        /// </summary>
+        private void ApplyModelsToAllOnlinePlayers()
+        {
+            if (_modelCacheService == null)
+                return;
+
+            var allPlayers = Core.PlayerManager.GetAllValidPlayers().ToList();
+            if (allPlayers.Count == 0)
+                return;
+
+            try
+            {
+                var logger = _serviceProvider?.GetService<ILogger<PlayersModel>>();
+                
+                // 批量加载所有玩家的缓存
+                var steamIds = allPlayers.Select(p => p.SteamID).ToList();
+                _modelCacheService.BatchLoadPlayerCachesAsync(steamIds).GetAwaiter().GetResult();
+                
+                logger?.LogInformation(
+                    _translationService?.GetConsole("system.applying_models_to_players", allPlayers.Count.ToString()) 
+                    ?? $"Applying saved models to {allPlayers.Count} online players..."
+                );
+
+                // 在下一个Tick应用模型给所有玩家
+                Core.Scheduler.NextWorldUpdate(() =>
+                {
+                    foreach (var player in allPlayers)
+                    {
+                        if (player == null || !player.IsValid || player.Pawn?.IsValid != true)
+                            continue;
+
+                        try
+                        {
+                            // 获取玩家当前阵营
+                            var currentTeam = player.Controller.TeamNum;
+                            var teamName = currentTeam == 2 ? "T" : currentTeam == 3 ? "CT" : "";
+                            
+                            if (string.IsNullOrEmpty(teamName))
+                                continue; // 不在T或CT队伍
+
+                            // 从缓存获取应用的模型路径（优先级：All > CT/T）
+                            var modelPathToApply = _modelCacheService.GetModelPathToApply(player.SteamID, teamName);
+                            
+                            // 如果缓存中没有，使用阵营默认模型
+                            if (string.IsNullOrEmpty(modelPathToApply))
+                            {
+                                var config = _serviceProvider?.GetService<IOptionsMonitor<PluginConfig>>();
+                                if (config != null)
+                                {
+                                    modelPathToApply = teamName == "CT" 
+                                        ? config.CurrentValue.DefaultCTModelPath 
+                                        : config.CurrentValue.DefaultTModelPath;
+                                }
+                            }
+                            
+                            // 应用模型
+                            if (!string.IsNullOrEmpty(modelPathToApply) && player.Pawn?.IsValid == true)
+                            {
+                                player.Pawn.SetModel(modelPathToApply);
+                                logger?.LogInformation(
+                                    _translationService?.GetConsole("system.model_applied_on_startup", player.Controller.PlayerName)
+                                    ?? $"Applied model on startup: {player.Controller.PlayerName}"
+                                );
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            logger?.LogError(ex, $"Failed to apply model on startup for player {player?.Controller.PlayerName}");
+                        }
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                var logger = _serviceProvider?.GetService<ILogger<PlayersModel>>();
+                logger?.LogError(ex, "Failed to apply models to online players on startup");
+            }
         }
     }
 }

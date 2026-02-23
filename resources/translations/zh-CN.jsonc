@@ -23,6 +23,8 @@
   "system.commands_registered": "✓ 命令系统已注册",
   "system.modelservice_warning": "⚠ 警告: ModelService为null",
   "system.service_not_loaded": "错误: 服务未加载",
+  "system.applying_models_to_players": "正在为 {0} 名在线玩家应用保存的模型...",
+  "system.model_applied_on_startup": "启动时应用模型: {0}",
   
   // ========== 数据库消息 ==========
   "database.auto_create_disabled": "数据库表自动创建已禁用",
@@ -61,6 +63,7 @@
   "modelservice.purchase_failed": "购买模型失败: {0}",
   "modelservice.applied_now": "玩家 {0} 立即应用模型 {1}",
   "modelservice.saved_for_later": "玩家 {0} 保存模型 {1} (阵营: {2})，将在重生时应用",
+  "modelservice.saved_for_next_spawn": "玩家 {0} 保存模型 {1}，将在重生时应用",
   "modelservice.saved_all_teams": "玩家 {0} 保存通用模型 {1} 到CT和T两个阵营",
   
   // ========== 事件消息 ==========
@@ -71,6 +74,8 @@
   "events.player_join_failed": "玩家进入应用模型失败: {0}",
   "events.player_spawn_applied": "玩家重生应用模型: {0}",
   "events.player_spawn_failed": "玩家重生应用模型失败: {0}",
+  "events.player_team_applied": "玩家切换队伍应用模型: {0} (队伍: {1})",
+  "events.player_team_failed": "玩家切换队伍应用模型失败: {0}",
   "events.round_start": "回合开始，为所有玩家应用保存的模型",
   "events.round_start_applied": "回合开始应用模型: {0}",
   "events.round_start_failed": "回合开始应用模型失败: {0}",
