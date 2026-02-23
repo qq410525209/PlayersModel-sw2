@@ -190,7 +190,7 @@ public partial class PlayersModel
         }
 
         var walletKind = config?.CurrentValue.WalletKind ?? "credits";
-        var balance = _economyAPI.GetPlayerBalance(player, walletKind);
+        var balance = _economyAPI.GetPlayerBalance(player.SteamID, walletKind);
         var balanceMsg = $"{PluginPrefix} {_translationService?.Get("command.balance.format", player, balance, walletKind) ?? $"Balance: {balance} {walletKind}"}";
         context.Reply(balanceMsg);
     }
@@ -265,8 +265,8 @@ public partial class PlayersModel
         var config = _serviceProvider?.GetRequiredService<IOptionsMonitor<PluginConfig>>();
         var walletKind = config?.CurrentValue.WalletKind ?? "credits";
 
-        _economyAPI.AddPlayerBalance(targetPlayer, walletKind, amount);
-        var newBalance = _economyAPI.GetPlayerBalance(targetPlayer, walletKind);
+        _economyAPI.AddPlayerBalance(targetPlayer.SteamID, walletKind, amount);
+        var newBalance = _economyAPI.GetPlayerBalance(targetPlayer.SteamID, walletKind);
 
         context.Reply($"{PluginPrefix} {_translationService?.GetConsole("admin.givecredits.success", targetPlayer.Controller.PlayerName, amount, walletKind, newBalance) ?? $"Gave {targetPlayer.Controller.PlayerName} {amount} {walletKind}, new balance: {newBalance}"}");
     }

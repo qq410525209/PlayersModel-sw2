@@ -107,6 +107,107 @@
         // 查看玩家拥有的模型
         "ListPlayerModels": ["pm_listmodels"]
       }
+    },
+    
+    // 货币系统设置
+    "Credits": {
+      // 钱包名称/类型 (默认: credits)
+      "WalletName": "credits",
+      
+      // 玩家首次加入时的起始余额
+      "StartingBalance": 1000,
+      
+      // 是否每个玩家只授予一次起始余额
+      // true = 仅首次加入时给予
+      // false = 每次加入都给予
+      "GrantStartingBalanceOncePerPlayer": true,
+      
+      // 当应用起始余额时是否通知玩家
+      "NotifyWhenStartingBalanceApplied": true,
+      
+      // 定时收入配置
+      "TimedIncome": {
+        // 是否启用定时收入系统
+        "Enabled": true,
+        
+        // 收入间隔 (秒)
+        "IntervalSeconds": 300.0,
+        
+        // 每次发放的金额
+        "Amount": 50,
+        
+        // 最低在线时长要求 (秒) - 玩家需要在线这么久才能获得收入
+        "MinimumOnlineTime": 60.0,
+        
+        // 是否只在玩家活跃时发放 (true=需要移动/操作，false=挂机也能获得)
+        "RequireActivity": false,
+        
+        // 是否在发放收入时通知玩家
+        "NotifyPlayer": true,
+        
+        // VIP 玩家的收入倍率 (1.0 = 无加成, 1.5 = 150%)
+        "VipMultiplier": 1.5
+      },
+      
+      // 货币转账配置
+      "Transfer": {
+        // 是否启用玩家之间的货币转账功能
+        "Enabled": false,
+        
+        // 单次转账最小金额
+        "MinimumAmount": 10,
+        
+        // 单次转账最大金额 (0 = 无限制)
+        "MaximumAmount": 10000,
+        
+        // 转账手续费百分比 (0-100, 0 = 无手续费, 5 = 5%手续费)
+        "TransactionFeePercent": 0.0,
+        
+        // 转账冷却时间 (秒)
+        "CooldownSeconds": 60.0,
+        
+        // 是否需要接收方确认
+        "RequireReceiverConfirmation": false,
+        
+        // 转账命令别名
+        "TransferCommands": ["transfer", "pay", "send"],
+        
+        // 是否记录转账日志到数据库
+        "LogTransactions": true
+      },
+      
+      // 管理员货币调整配置
+      "AdminAdjustments": {
+        // 是否启用管理员货币调整功能
+        "Enabled": true,
+        
+        // 是否记录管理员操作日志
+        "LogAdjustments": true,
+        
+        // 给予货币命令别名
+        "GiveCommands": ["pm_givecredits", "pm_addcredits"],
+        
+        // 扣除货币命令别名
+        "TakeCommands": ["pm_takecredits", "pm_removecredits"],
+        
+        // 设置货币命令别名
+        "SetCommands": ["pm_setcredits"],
+        
+        // 重置所有玩家货币命令别名
+        "ResetAllCommands": ["pm_resetallcredits"],
+        
+        // 单次操作最大金额限制 (0 = 无限制) - 防止误操作
+        "MaxSingleOperationAmount": 100000,
+        
+        // 是否在执行操作后向目标玩家发送通知
+        "NotifyTargetPlayer": true,
+        
+        // 是否在执行操作后向全服广播 (适合大额发放活动)
+        "BroadcastLargeAdjustments": false,
+        
+        // 广播的金额阈值 (当调整金额大于等于此值时广播)
+        "BroadcastThreshold": 10000
+      }
     }
   }
 }

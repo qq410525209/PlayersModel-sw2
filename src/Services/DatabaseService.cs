@@ -213,6 +213,20 @@ public class DatabaseService : IDatabaseService
 
             await connection.ExecuteAsync(createTransactionsTable);
             _logger.LogInformation(_translation.GetConsole("database.table_initialized", TransactionsTable));
+
+            // 创建初始积分发放记录表
+            var createStartingBalanceTable = @"
+                CREATE TABLE IF NOT EXISTS playersmodel_starting_balance_grants (
+                    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                    steam_id BIGINT NOT NULL UNIQUE,
+                    granted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    INDEX idx_steam_id (steam_id),
+                    INDEX idx_granted_at (granted_at)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+            ";
+
+            await connection.ExecuteAsync(createStartingBalanceTable);
+            _logger.LogInformation(_translation.GetConsole("database.table_initialized", "playersmodel_starting_balance_grants"));
         }
         catch (Exception ex)
         {

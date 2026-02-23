@@ -83,24 +83,53 @@ public partial class PlayersModel
             // 跳过无效玩家和BOT
             if (player == null || !player.IsValid || player.IsFakeClient) return;
 
+            // 处理初始积分发放
+            var creditsService = _serviceProvider?.GetService<ICreditsService>();
+            if (creditsService != null)
+            {
+                Task.Run(async () => await creditsService.HandlePlayerJoinAsync(player));
+            }
+
             Core.Scheduler.DelayBySeconds(1.5f, () =>
             {
                 if (!player.IsValid || player.Pawn?.IsValid != true || _modelCacheService == null) return;
                 
+                var logger = _serviceProvider?.GetService<ILogger<PlayersModel>>();
+                logger?.LogWarning($"[DEBUG] OnClientPutInServer - Player: {player.Controller.PlayerName}, SteamID: {player.SteamID}");
+                
                 try
                 {
                     // 批量加载该玩家的缓存
+                    logger?.LogWarning($"[DEBUG] OnClientPutInServer - Before BatchLoad");
                     _modelCacheService.BatchLoadPlayerCachesAsync(new[] { player.SteamID }).GetAwaiter().GetResult();
+                    
+                    var cacheAfterLoad = _modelCacheService.GetPlayerCache(player.SteamID);
+                    logger?.LogWarning($"[DEBUG] OnClientPutInServer - Cache after load: {(cacheAfterLoad != null ? "EXISTS" : "NULL")}");
+                    
+                    if (cacheAfterLoad != null)
+                    {
+                        logger?.LogWarning($"[DEBUG] OnClientPutInServer - Cache content: AllTeam={cacheAfterLoad.AllTeamModelPath ?? "NULL"}, CT={cacheAfterLoad.CTModelPath ?? "NULL"}, T={cacheAfterLoad.TModelPath ?? "NULL"}");
+                    }
                     
                     // 获取玩家当前阵营
                     var currentTeam = player.Controller.TeamNum;
                     var teamName = currentTeam == 2 ? "T" : currentTeam == 3 ? "CT" : "";
                     
+                    logger?.LogWarning($"[DEBUG] EventPlayerSpawn - Team: {teamName}, TeamNum: {currentTeam}");
                     if (string.IsNullOrEmpty(teamName)) return; // 不在T或CT队伍
                     
                     // 确保玩家的缓存已加载（防止热身回合时缓存未加载）
+                    var cacheBeforeLoad = _modelCacheService.GetPlayerCache(player.SteamID);
+                    logger?.LogWarning($"[DEBUG] EventPlayerSpawn - Cache before load: {(cacheBeforeLoad != null ? "EXISTS" : "NULL")}");
+                    
+                    if (cacheBeforeLoad != null)
+                    {
+                        logger?.LogWarning($"[DEBUG] EventPlayerSpawn - Cache content: AllTeam={cacheBeforeLoad.AllTeamModelPath ?? "NULL"}, CT={cacheBeforeLoad.CTModelPath ?? "NULL"}, T={cacheBeforeLoad.TModelPath ?? "NULL"}");
+                    }
+                    
                     if (_modelCacheService.GetPlayerCache(player.SteamID) == null)
                     {
+                        logger?.LogWarning($"[DEBUG] EventPlayerSpawn - Loading cache because it was NULL");
                         _modelCacheService.BatchLoadPlayerCachesAsync(new[] { player.SteamID }).GetAwaiter().GetResult();
                     }
                     
@@ -119,35 +148,16 @@ public partial class PlayersModel
                         }
                     }
                     
+                    logger?.LogWarning($"[DEBUG] OnClientPutInServer - ModelPath: {modelPathToApply ?? "NULL"}");
                     // 应用模型
                     if (!string.IsNullOrEmpty(modelPathToApply))
                     {
                         player.Pawn.SetModel(modelPathToApply);
-                        var logger = _serviceProvider?.GetService<ILogger<PlayersModel>>();
                         logger?.LogInformation(_translationService?.GetConsole("events.player_join_applied", player.Controller.PlayerName) ?? $"Applied model on join: {player.Controller.PlayerName}");
-                        
-                        // 延迟应用 MeshGroup 配置，确保模型先加载
-                        Core.Scheduler.DelayBySeconds(0.25f, () =>
-                        {
-                            if (player?.Pawn?.IsValid == true)
-                            {
-                                var model = _modelService?.GetAllModels().FirstOrDefault(m => m.ModelPath == modelPathToApply);
-                                if (model != null && model.MeshGroups != null && model.MeshGroups.Count > 0)
-                                {
-                                    var meshGroupService = _serviceProvider?.GetService<IMeshGroupService>();
-                                    if (meshGroupService != null)
-                                    {
-                                        meshGroupService.LoadAndApplyPlayerMeshGroupsAsync(player, model.ModelId, teamName).GetAwaiter().GetResult();
-                                        logger?.LogDebug(_translationService?.GetConsole("events.meshgroup_applied", player.Controller.PlayerName) ?? $"Loaded and applied MeshGroup config: {player.Controller.PlayerName}");
-                                    }
-                                }
-                            }
-                        });
                     }
                 }
                 catch (Exception ex)
                 {
-                    var logger = _serviceProvider?.GetService<ILogger<PlayersModel>>();
                     logger?.LogError(ex, _translationService?.GetConsole("events.player_join_failed", player?.Controller.PlayerName ?? "") ?? $"Failed to apply model on join: {player?.Controller.PlayerName}");
                 }
             });
@@ -207,6 +217,8 @@ public partial class PlayersModel
 
             Core.Scheduler.DelayBySeconds(0.3f, () =>
             {
+                var logger = _serviceProvider?.GetService<ILogger<PlayersModel>>();
+                logger?.LogWarning($"[DEBUG] EventPlayerSpawn - Player: {player.Controller.PlayerName}, SteamID: {player.SteamID}");
                 if (!player.IsValid || player.Pawn?.IsValid != true || _modelCacheService == null) return;
                 
                 try
@@ -215,6 +227,7 @@ public partial class PlayersModel
                     var currentTeam = player.Controller.TeamNum;
                     var teamName = currentTeam == 2 ? "T" : currentTeam == 3 ? "CT" : "";
                     
+                    logger?.LogWarning($"[DEBUG] OnClientPutInServer - Team: {teamName}, TeamNum: {currentTeam}");
                     if (string.IsNullOrEmpty(teamName)) return; // 不在T或CT队伍
                     
                     // 从缓存获取应用的模型路径（优先级：All > CT/T）
@@ -232,35 +245,21 @@ public partial class PlayersModel
                         }
                     }
                     
+                    logger?.LogWarning($"[DEBUG] EventPlayerSpawn - ModelPath: {modelPathToApply ?? "NULL"}");
                     // 应用模型
                     if (!string.IsNullOrEmpty(modelPathToApply))
                     {
                         player.Pawn.SetModel(modelPathToApply);
-                        var logger = _serviceProvider?.GetService<ILogger<PlayersModel>>();
-                        logger?.LogInformation(_translationService?.GetConsole("events.player_spawn_applied", player.Controller.PlayerName) ?? $"Applied model on spawn: {player.Controller.PlayerName}");
                         
-                        // 延迟应用 MeshGroup 配置，确保模型先加载
-                        Core.Scheduler.DelayBySeconds(0.25f, () =>
-                        {
-                            if (player?.Pawn?.IsValid == true)
-                            {
-                                var model = _modelService?.GetAllModels().FirstOrDefault(m => m.ModelPath == modelPathToApply);
-                                if (model != null && model.MeshGroups != null && model.MeshGroups.Count > 0)
-                                {
-                                    var meshGroupService = _serviceProvider?.GetService<IMeshGroupService>();
-                                    if (meshGroupService != null)
-                                    {
-                                        meshGroupService.LoadAndApplyPlayerMeshGroupsAsync(player, model.ModelId, teamName).GetAwaiter().GetResult();
-                                        logger?.LogDebug(_translationService?.GetConsole("events.meshgroup_applied", player.Controller.PlayerName) ?? $"Loaded and applied MeshGroup config: {player.Controller.PlayerName}");
-                                    }
-                                }
-                            }
-                        });
+                        // 刷新玩家实体以立即应用模型（避免需要二次重生）
+                        // 注意：这可能会导致轻微的视觉闪烁，但确保模型立即生效
+                        player.Pawn.Teleport(player.Pawn.AbsOrigin, player.Pawn.AbsRotation, player.Pawn.AbsVelocity);
+                        
+                        logger?.LogInformation(_translationService?.GetConsole("events.player_spawn_applied", player.Controller.PlayerName) ?? $"Applied model on spawn: {player.Controller.PlayerName}");
                     }
                 }
                 catch (Exception ex)
                 {
-                    var logger = _serviceProvider?.GetService<ILogger<PlayersModel>>();
                     logger?.LogError(ex, _translationService?.GetConsole("events.player_spawn_failed", player?.Controller.PlayerName ?? "") ?? $"Failed to apply model on spawn: {player?.Controller.PlayerName}");
                 }
             });
@@ -326,24 +325,6 @@ public partial class PlayersModel
                             if (player.Pawn == null) continue;
                             player.Pawn.SetModel(modelPathToApply);
                             logger?.LogInformation(_translationService?.GetConsole("events.round_start_applied", player.Controller.PlayerName) ?? $"Applied model on round start: {player.Controller.PlayerName}");
-                            
-                            // 延迟应用 MeshGroup 配置，确保模型先加载
-                            Core.Scheduler.DelayBySeconds(0.25f, () =>
-                            {
-                                if (player?.Pawn?.IsValid == true)
-                                {
-                                    var model = _modelService?.GetAllModels().FirstOrDefault(m => m.ModelPath == modelPathToApply);
-                                    if (model != null && model.MeshGroups != null && model.MeshGroups.Count > 0)
-                                    {
-                                        var meshGroupService = _serviceProvider?.GetService<IMeshGroupService>();
-                                        if (meshGroupService != null)
-                                        {
-                                            meshGroupService.LoadAndApplyPlayerMeshGroupsAsync(player, model.ModelId, teamName).GetAwaiter().GetResult();
-                                            logger?.LogDebug(_translationService?.GetConsole("events.meshgroup_applied", player.Controller.PlayerName) ?? $"Loaded and applied MeshGroup config: {player.Controller.PlayerName}");
-                                        }
-                                    }
-                                }
-                            });
                         }
                     }
                     catch (Exception ex)

@@ -195,4 +195,17 @@
   "meshgroup.loaded_applied": "从数据库加载并应用 MeshGroup: {0} Index={1}",
   "meshgroup.load_apply_failed": "加载并应用 MeshGroup 配置失败",
   "meshgroup.deserialize_failed": "反序列化 MeshGroup 数据失败: {0}"
+,
+  
+  // ========== 货币系统消息 ==========
+  "credits.starting_balance_granted": "✓ 欢迎加入! 已发放初始货币: {0} {1}",
+  "credits.timed_income_received": "✓ 定时收入: +{0} {1}",
+  "credits.transfer_success": "✓ 成功转账 {0} {1} 给 {2}",
+  "credits.transfer_insufficient": "✗ 余额不足! 当前: {0} {1}",
+  "credits.transfer_self": "✗ 不能转账给自己",
+  "credits.transfer_invalid_amount": "✗ 无效的转账金额",
+  "credits.transfer_cooldown": "✗ 转账冷却中，请稍后再试",
+  "credits.transfer_disabled": "✗ 转账功能未启用",
+  "credits.admin_adjustment": "✓ 管理员 {0} 调整了你的货币: {1} {2}",
+  "credits.balance_adjusted": "✓ 已调整 {0} 的货币余额"
 }

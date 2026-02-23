@@ -415,7 +415,7 @@ public class ModelService : IModelService
 
             // 检查余额
             var walletKind = _config.CurrentValue.WalletKind;
-            var balance = _economyAPI.GetPlayerBalance(player, walletKind);
+            var balance = _economyAPI.GetPlayerBalance(player.SteamID, walletKind);
 
             if (balance < model.Price)
             {
@@ -424,9 +424,9 @@ public class ModelService : IModelService
 
             // 扣除金额
             var balanceBefore = balance;
-            _economyAPI.SubtractPlayerBalance(player, walletKind, model.Price);
+            _economyAPI.SubtractPlayerBalance(player.SteamID, walletKind, model.Price);
 
-            var balanceAfter = _economyAPI.GetPlayerBalance(player, walletKind);
+            var balanceAfter = _economyAPI.GetPlayerBalance(player.SteamID, walletKind);
 
             // 添加到拥有列表
             await _database.AddOwnedModelAsync(
@@ -442,7 +442,7 @@ public class ModelService : IModelService
                 player.Controller.PlayerName,
                 modelId,
                 "purchase", model.Price, (int)balanceBefore, (int)balanceAfter);
-            var newBalance = _economyAPI.GetPlayerBalance(player, walletKind);
+            var newBalance = _economyAPI.GetPlayerBalance(player.SteamID, walletKind);
             _logger.LogInformation(_translation.GetConsole("modelservice.purchased", player.Controller.PlayerName, model.DisplayName, model.Price, walletKind));
 
             return (true, _translation.Get("purchase.success", player, model.DisplayName, newBalance, walletKind));

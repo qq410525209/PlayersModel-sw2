@@ -12,7 +12,7 @@ namespace PlayersModel
 {
     [PluginMetadata(
         Id = "PlayersModel", 
-        Version = "1.0", 
+        Version = "1.1", 
         Name = "PlayersModel", 
         Author = "小彩旗", 
         Description = "Player Model Plugins with Economy Integration"
@@ -27,7 +27,9 @@ namespace PlayersModel
     private IModelCacheService? _modelCacheService;
     private IMeshGroupService? _meshGroupService;
     private ITranslationService? _translationService;
-    private NativeHookService? _nativeHookService;        /// <summary>
+    private ICreditsService? _creditsService;
+
+        /// <summary>
         /// 获取格式化的插件前缀 [PluginName]
         /// </summary>
         private string PluginPrefix
@@ -91,11 +93,11 @@ namespace PlayersModel
                 // 注册命令
                 RegisterCommands();
 
-                // 注册事件 - 在这里会初始化 NativeHookService
+                // 注册事件
                 InitializeEvents();
-                
-                // 初始化原生Hook
-                _nativeHookService?.InitializeHooks();
+
+                // 启动定时收入系统
+                _creditsService?.StartTimedIncomeSystem();
 
                 Console.WriteLine($"{PluginPrefix} {_translationService?.GetConsole("plugin.loaded") ?? "Plugin loaded successfully!"}");
                 
@@ -112,6 +114,9 @@ namespace PlayersModel
 
         public override void Unload()
         {
+            // 停止定时收入系统
+            _creditsService?.StopTimedIncomeSystem();
+
             Console.WriteLine($"{PluginPrefix} {_translationService?.GetConsole("plugin.unloaded") ?? "Plugin unloaded"}");
         }
 
@@ -168,7 +173,7 @@ namespace PlayersModel
             services.AddSingleton<IPreviewService, PreviewService>();
             services.AddSingleton<IMenuService, MenuService>();
             services.AddSingleton<IModelHookService, ModelHookService>();
-            services.AddSingleton<NativeHookService>();
+            services.AddSingleton<ICreditsService, CreditsService>();
 
             _serviceProvider = services.BuildServiceProvider();
 
@@ -178,12 +183,10 @@ namespace PlayersModel
             _modelCacheService = _serviceProvider.GetRequiredService<IModelCacheService>();
             _meshGroupService = _serviceProvider.GetRequiredService<IMeshGroupService>();
             
+            _creditsService = _serviceProvider.GetRequiredService<ICreditsService>();
             // 初始化模型Hook服务并注入到ModelService
             var modelHookService = _serviceProvider.GetRequiredService<IModelHookService>();
             _modelService.SetModelHookService(modelHookService);
-            
-            // 初始化原生Hook服务
-            _nativeHookService = _serviceProvider.GetRequiredService<NativeHookService>();
             
             // 在事件初始化后启动Hook
             modelHookService.InitializeHooks();
@@ -211,6 +214,13 @@ namespace PlayersModel
                         modelService.SetMeshGroupService(_meshGroupService);
                         Console.WriteLine($"{PluginPrefix} MeshGroupService successfully passed to ModelService");
                     }
+                // 将 Economy API 传递给 CreditsService
+                if (_creditsService is CreditsService creditsService)
+                {
+                    creditsService.SetEconomyAPI(_economyAPI);
+                    Console.WriteLine($"{PluginPrefix} Economy API successfully passed to CreditsService");
+                }
+
                 }
 
                 // 确保钱包类型存在

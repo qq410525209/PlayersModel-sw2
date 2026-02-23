@@ -76,6 +76,11 @@ public class PluginConfig
     /// 命令设置
     /// </summary>
     public CommandConfig Commands { get; set; } = new();
+
+    /// <summary>
+    /// 货币系统设置
+    /// </summary>
+    public CreditsConfig Credits { get; set; } = new();
 }
 
 /// <summary>
