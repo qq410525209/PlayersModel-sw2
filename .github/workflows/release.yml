@@ -109,7 +109,7 @@ jobs:
         run: dotnet build --configuration Release
       
       - name: Publish project
-        run: dotnet publish --configuration Release --no-build
+        run: dotnet publish --configuration Release --output build/publish --no-build
       
       - name: Prepare release artifact
         run: |
@@ -118,6 +118,9 @@ jobs:
           # 复制构建输出到发布目录
           if [ -d "build/publish/PlayersModel" ]; then
             cp -r build/publish/PlayersModel release-artifacts/
+          elif [ -d "build/publish" ]; then
+            mkdir -p release-artifacts/PlayersModel
+            cp -r build/publish/* release-artifacts/PlayersModel/
           elif [ -d "build/net10.0" ]; then
             mkdir -p release-artifacts/PlayersModel
             cp -r build/net10.0/* release-artifacts/PlayersModel/
