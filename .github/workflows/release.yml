@@ -79,7 +79,7 @@ jobs:
           $DESCRIPTION += "- Simplified single-model-per-player design`n"
           $DESCRIPTION += "- 3-tier model loading fallback system`n`n"
           $DESCRIPTION += "### Installation`n"
-          $DESCRIPTION += "1. Download ``PlayersModel.zip``"$"`n"
+          $DESCRIPTION += "1. Download PlayersModel.zip`n"
           $DESCRIPTION += "2. Extract to your SwiftlyS2 plugins directory`n"
           $DESCRIPTION += "3. Restart your server`n"
           
